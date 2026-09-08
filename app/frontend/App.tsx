@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import './App.css'
 
 interface HelloData {
@@ -9,32 +9,25 @@ interface ApiResponse {
   data: HelloData
 }
 
-function App() {
-  const [response, setResponse] = useState<ApiResponse | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+async function fetchHello(): Promise<ApiResponse> {
+  const res = await fetch('/api/hello')
+  if (!res.ok) {
+    throw new Error(`HTTP error! status: ${res.status}`)
+  }
+  const data: HelloData | { data: HelloData } = await res.json()
+  const helloData = 'data' in data && data.data ? data.data : (data as HelloData)
+  return { data: helloData }
+}
 
-  useEffect(() => {
-    fetch('/api/hello')
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error(`HTTP error! status: ${res.status}`)
-        }
-        return res.json()
-      })
-      .then((data: HelloData | { data: HelloData }) => {
-        const helloData = 'data' in data && data.data ? data.data : (data as HelloData)
-        setResponse({ data: helloData })
-        setLoading(false)
-      })
-      .catch((err) => {
-        setError(err instanceof Error ? err.message : 'Unknown error')
-        setLoading(false)
-      })
-  }, [])
+function App() {
+  const { data: response, error } = useQuery({
+    queryKey: ['hello'],
+    queryFn: fetchHello,
+  })
 
   return (
     <main className="hello-container">
+      {error && <p className="error-message">{error.message}</p>}
       {response && <h1>Hello {response.data.hello}</h1>}
     </main>
   )
