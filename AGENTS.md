@@ -35,3 +35,26 @@ Duler is an HRIS member sync application that ingests payroll exports and reconc
    - **Matching:** Match file records to existing roster members (`app/services/import/matcher.rb`)
    - **Planning:** Compute proposed changes before writing (`app/services/import/planner.rb`)
    - **Applying:** Execute planned changes safely and idempotently (`app/services/import/applier.rb`)
+
+## Test Structure
+
+- Use a shallow `describe "when ..."` for the scenario and `it "..."` for the expected behavior.
+- Keep each example self-contained: setup, exercise, and verification belong inside `it`, separated by blank lines. Prefer explicit local variables and a little duplication over nested contexts, `let`, `before`, `subject`, or shared examples that hide the test's flow.
+- Keep factories minimal; opt into extra associations with traits only when needed.
+- Use deterministic, explicit test data instead of random values or Faker; cover unusual inputs deliberately.
+- In feature/system specs, interact with and assert user-visible text rather than CSS classes, IDs, or DOM structure. Prefer `I18n.t` for translated labels.
+
+```ruby
+describe "when user signed in with their GitHub account" do
+  it "doesn't show the credentials edition button" do
+    user = create(:user, :from_github)
+
+    visit root_path(as: user)
+    click_on I18n.t("menu.edit_account")
+
+    expect(page).not_to(
+      have_content I18n.t("edit_account.password")
+    )
+  end
+end
+```
