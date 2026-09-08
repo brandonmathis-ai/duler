@@ -1,0 +1,34 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+pids = [
+  spawn('bundle', 'exec', 'vite', 'dev'),
+  spawn('bundle', 'exec', 'rails', 'server', *ARGV)
+]
+
+def process_running?(pid)
+  Process.kill(0, pid)
+  true
+rescue Errno::ESRCH
+  false
+end
+
+def terminate(pid)
+  Process.kill('TERM', pid) if process_running?(pid)
+end
+
+Signal.trap('INT') do
+  pids.each { |pid| terminate(pid) }
+end
+
+Signal.trap('TERM') do
+  pids.each { |pid| terminate(pid) }
+end
+
+begin
+  _, status = Process.wait2
+ensure
+  pids.each { |pid| terminate(pid) }
+end
+
+exit(status&.exitstatus || 1)
