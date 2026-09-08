@@ -15,7 +15,7 @@ module Import
 
   module Parsers
     # Maps the payroll provider's CSV columns to canonical rows.
-    class PayrollCsvParser < BaseParser
+    class PayrollCsvParser
       VALID_POSITION_STATUSES = %w[active terminated].freeze
 
       def parse(io)
