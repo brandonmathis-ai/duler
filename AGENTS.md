@@ -25,6 +25,9 @@ Duler is an HRIS member sync application that ingests payroll exports and reconc
 - `bin/rubocop` (or `bundle exec rubocop`) — Run RuboCop on Ruby files
 - `npm run lint` — Run Oxlint on frontend TypeScript/React files
 
+## RULES
+1. DO NOT run tests unless instructed to do so.
+
 ## Agent Instructions & Guidelines
 
 1. **Mandatory Linting:** Always run `bin/rubocop` and `npm run lint` before completing work, and resolve any violations.
