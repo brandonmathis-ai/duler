@@ -17,3 +17,6 @@ Style/Documentation:
 Metrics/MethodLength:
   Exclude:
     - "db/migrate/**/*"
+
+Layout/LineLength:
+  Max: 120

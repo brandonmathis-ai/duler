@@ -2,8 +2,8 @@
 
 FactoryBot.define do
   factory :assignment do
-    member { nil }
-    location_code { 'MyString' }
-    role { 'MyString' }
+    member
+    location_code { Faker::Address.unique.state_abbr }
+    role { Faker::Job.position.downcase }
   end
 end
