@@ -39,9 +39,15 @@ Duler is an HRIS member sync application that ingests payroll exports and reconc
    - **Planning:** Compute proposed changes before writing (`app/services/import/planner.rb`)
    - **Applying:** Execute planned changes safely and idempotently (`app/services/import/applier.rb`)
 
+5. **RSpec Guidelines:** Follow [Better Specs](https://www.betterspecs.org/) conventions outlined in [Test Structure](#test-structure) (describe methods, use contexts, keep descriptions short, and use `expect` syntax).
+
 ## Test Structure
 
-- Use a shallow `describe "when ..."` for the scenario and `it "..."` for the expected behavior.
+Follow [Better Specs](https://www.betterspecs.org/) conventions:
+- **Describe your methods:** Be clear about what method you are describing. Use `.` (or `::`) for class methods and `#` for instance methods (e.g., `describe '.authenticate'`, `describe '#admin?'`).
+- **Use contexts:** Contexts make tests clear and well organized. Start context descriptions with `'when'`, `'with'`, or `'without'` (e.g., `context 'when logged in' do`). Keep contexts shallow rather than deeply nested.
+- **Keep descriptions short:** Spec descriptions (`it "..."`) should never be longer than 40 characters. If a description exceeds 40 characters, split it using a context.
+- **Expect vs should syntax:** Always use the `expect` syntax (`expect(...)` or `is_expected.to`), never `should`.
 - Keep each example self-contained: setup, exercise, and verification belong inside `it`, separated by blank lines. Prefer explicit local variables and a little duplication over nested contexts, `let`, `before`, `subject`, or shared examples that hide the test's flow.
 - Reference the class under test explicitly do not use `described_class` in specs or test pseudocode.
 - Keep factories minimal; opt into extra associations with traits only when needed.
@@ -50,8 +56,8 @@ Duler is an HRIS member sync application that ingests payroll exports and reconc
 - In feature/system specs, interact with and assert user-visible text rather than CSS classes, IDs, or DOM structure. Prefer `I18n.t` for translated labels.
 
 ```ruby
-describe "when user signed in with their GitHub account" do
-  it "doesn't show the credentials edition button" do
+context "when user signed in with GitHub" do
+  it "hides credential edit button" do
     user = create(:user, :from_github)
 
     visit root_path(as: user)

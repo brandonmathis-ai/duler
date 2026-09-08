@@ -7,7 +7,6 @@ FactoryBot.define do
     last_name { Faker::Name.last_name }
     corporate_email { Faker::Internet.email(name: "#{first_name} #{last_name}", domain: 'sunsethotels.com') }
     status { 'active' }
-    invite_status { 'pending' }
     user { nil }
   end
 end
