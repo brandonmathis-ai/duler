@@ -1,0 +1,88 @@
+DULER — TAKE-HOME: HRIS MEMBER SYNC
+Paid, async · timebox ~8h + a ~15 min Loom walkthrough.
+Ships with: sample-import.csv, current-roster.json
+
+CONTEXT
+Duler is a workforce-management tool hotels use to staff their properties — today the
+roster is maintained by hand. Hotels already run a payroll/HR system (ADP, Paychex…) that
+can export their employees as a file. We want Duler to ingest that file and keep the roster
+in sync — add new people, update changed ones, offboard leavers — with no duplicates and no
+data loss. Here's how one of the founders put it:
+
+  "Our first hotel already runs everyone through payroll, so every night they can drop us a
+   CSV of their current staff. I just want Duler's roster to mirror that file — it's the
+   source of truth for who works there. Match people up by name, pull in anyone new, and if
+   someone's dropped off the file they've clearly left, so take them out. For everyone else,
+   just refresh their details from the file so we're always current. Ideally it just runs
+   every night on its own — nobody wants to babysit it. It's a plain CSV, so I'm hoping this
+   is a quick one — we'd love it live by Friday for the pilot."
+
+DATA MODEL (WHAT YOU SYNC INTO)
+- Organization → Property → Department. An Organization is a hotel group; a Property is one
+  hotel; Departments sit inside a Property. The sample org runs two properties (DT, UP).
+- MEMBER = a person's link to an org: corporate email, name, status (active/terminated),
+  per-property assignments (properties/departments + role).
+- USER = a global login account, identified by email. A person may already have an account
+  (from another hotel on Duler) with NO membership here.
+- New person, no account → invite email (pending until accepted). Has an account → membership
+  created directly.
+- Never hard-delete. Leaving = terminated: kept for history, still in past published schedules,
+  re-hireable.
+- Per-property assignments and roles live in Duler.
+
+THE DATA
+Two files ship with this brief:
+- sample-import.csv — one night's payroll export.
+- current-roster.json — the Duler roster as it stands BEFORE that import.
+Assume a real property has hundreds of members.
+
+DELIVERABLES (~8H TOTAL — WE DO NOT EXPECT ALL OF IT)
+If you run short, cut depth in #2 first, not #3 or #4, and write
+down what you cut. How you prioritize is part of what we're reading.
+
+1. HOW YOU READ IT — short note, bullets. How you interpreted the task and the
+   assumptions you're making. If you'd approach any part differently than described, say so and why.
+
+2. RECONCILE CORE — code + tests. Keep it small and well-structured.
+   Required boundaries: parsing / matching / planning / applying. Put the weight on the PLAN —
+   a description of what would change, computed before anything is written. Applying that plan
+   can stay thin. The plan accounts for every person in the roster and every row in the file,
+   including rows it couldn't process. The categories are yours.
+   Add a short structure note (bullets): your boundaries, the categories you chose and why you
+   drew the lines there, how a second HRIS provider with a different file format plugs in, how
+   a re-run stays safe.
+   Ruby preferred (our stack); use what's fastest if not — we read the thinking.
+
+3. CONFLICT SCREEN — React + TypeScript. Build the screen the admin sees after a payroll file
+   comes in: 100 unchanged, 3 conflicts, 2 offboards (illustrative numbers). It should talk to
+   your own backend — README says how to run both. Mock data shaped like your response is
+   acceptable if you run out of time; say so if you do. We read structure and judgment, not
+   styling; unstyled is fine. In the README: 3–5 bullets on how the admin trusts it, understands
+   it and acts safely, plus a paragraph on the shape of the API response behind it — counts,
+   per-record detail, conflicts — and why that shape is what the screen needs.
+
+4. ROLLOUT — bullets. You plus one engineer: how you break this into tickets and milestones,
+   what ships first, the biggest risks. Say which piece you'd hand to the other engineer, what
+   you'd keep, and what has to be true before you can hand it over.
+
+5. LOOM — ~15 min. Required, in this order:
+   (a) walk us through your code;
+   (b) name the 2–3 decisions you're least sure of.
+
+HOW TO SUBMIT
+Everything in one GitHub repo (public, or private and invite us):
+- the code and tests, backend and frontend;
+- a README with your written bits — the note (#1), the structure note (#2), the screen bullets
+  and the API paragraph (#3), the rollout (#4) — plus the Loom link;
+- a "What I cut" section in the README: what you deliberately didn't handle and why.
+Reply with the repo link when you're done.
+
+GROUND RULES
+- Keep the writing short and concrete. Rough notes are fine; we don't need a polished write-up.
+- We're reading architecture and judgment. Cover fewer cases and factor them well. Exhaustive
+  business rules aren't the point.
+- AI tools are fine. The code has to run, and the Loom has to be you.
+- Everything in the repo counts as a claim. A screenshot or a README line describing behavior
+  the code doesn't have hurts more than leaving it out.
+- Ask questions by email whenever you want — that's part of the exercise, not a strike against you.
+- Scoped exercise on synthetic data. We won't ship any of this.

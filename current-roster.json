@@ -1,0 +1,230 @@
+{
+  "note": "Trimmed sample of the Duler roster BEFORE this import. Assume a real property has hundreds of members; the few unchanged ones here stand in for the rest.",
+  "members": [
+    {
+      "membership_id": "mbr_1002",
+      "external_id": "1002",
+      "user": {
+        "id": "usr_okafor",
+        "personal_email": "d.okafor@gmail.com"
+      },
+      "corporate_email": "david.okafor@sunsethotels.com",
+      "first_name": "David",
+      "last_name": "Okafor",
+      "status": "active",
+      "invite_status": "accepted",
+      "assignments": [
+        {
+          "location_code": "DT",
+          "role": "member"
+        }
+      ]
+    },
+    {
+      "membership_id": "mbr_1003",
+      "external_id": "1003",
+      "user": {
+        "id": "usr_chen",
+        "personal_email": "rchen@gmail.com"
+      },
+      "corporate_email": "robert.c@oldmail.com",
+      "first_name": "Robert",
+      "last_name": "Chen",
+      "status": "active",
+      "invite_status": "accepted",
+      "assignments": [
+        {
+          "location_code": "DT",
+          "role": "admin"
+        }
+      ]
+    },
+    {
+      "membership_id": "mbr_5041",
+      "external_id": "1005",
+      "user": null,
+      "corporate_email": "srivera@sunsethotels.com",
+      "first_name": "Sam",
+      "last_name": "Rivera",
+      "status": "active",
+      "invite_status": "pending",
+      "assignments": [
+        {
+          "location_code": "DT",
+          "role": "member"
+        }
+      ]
+    },
+    {
+      "membership_id": "mbr_5042",
+      "external_id": null,
+      "user": {
+        "id": "usr_sam",
+        "personal_email": "sam.rivera@gmail.com"
+      },
+      "corporate_email": "sam.rivera@sunsethotels.com",
+      "first_name": "Sam",
+      "last_name": "Rivera",
+      "status": "active",
+      "invite_status": "accepted",
+      "assignments": [
+        {
+          "location_code": "UP",
+          "role": "admin"
+        }
+      ]
+    },
+    {
+      "membership_id": "mbr_1006",
+      "external_id": "1006",
+      "user": {
+        "id": "usr_patel",
+        "personal_email": "nina.p@gmail.com"
+      },
+      "corporate_email": "nina.patel@sunsethotels.com",
+      "first_name": "Nina",
+      "last_name": "Patel",
+      "status": "active",
+      "invite_status": "accepted",
+      "assignments": [
+        {
+          "location_code": "DT",
+          "role": "member"
+        }
+      ]
+    },
+    {
+      "membership_id": "mbr_3007",
+      "external_id": "3007",
+      "user": {
+        "id": "usr_chen2",
+        "personal_email": ""
+      },
+      "corporate_email": "r.chen@sunsethotels.com",
+      "first_name": "Robert",
+      "last_name": "Chen",
+      "status": "active",
+      "invite_status": "accepted",
+      "assignments": [
+        {
+          "location_code": "UP",
+          "role": "member"
+        }
+      ]
+    },
+    {
+      "membership_id": "mbr_2001",
+      "external_id": "2001",
+      "user": {
+        "id": "usr_smith",
+        "personal_email": ""
+      },
+      "corporate_email": "john.smith@sunsethotels.com",
+      "first_name": "John",
+      "last_name": "Smith",
+      "status": "active",
+      "invite_status": "accepted",
+      "assignments": [
+        {
+          "location_code": "DT",
+          "role": "member"
+        }
+      ]
+    },
+    {
+      "membership_id": "mbr_2002",
+      "external_id": "2002",
+      "user": {
+        "id": "usr_davis",
+        "personal_email": ""
+      },
+      "corporate_email": "emily.davis@sunsethotels.com",
+      "first_name": "Emily",
+      "last_name": "Davis",
+      "status": "active",
+      "invite_status": "accepted",
+      "assignments": [
+        {
+          "location_code": "DT",
+          "role": "member"
+        }
+      ]
+    },
+    {
+      "membership_id": "mbr_2003",
+      "external_id": "2003",
+      "user": {
+        "id": "usr_brown",
+        "personal_email": ""
+      },
+      "corporate_email": "michael.brown@sunsethotels.com",
+      "first_name": "Michael",
+      "last_name": "Brown",
+      "status": "active",
+      "invite_status": "accepted",
+      "assignments": [
+        {
+          "location_code": "UP",
+          "role": "member"
+        }
+      ]
+    },
+    {
+      "membership_id": "mbr_2004",
+      "external_id": "2004",
+      "user": {
+        "id": "usr_wilson",
+        "personal_email": ""
+      },
+      "corporate_email": "sarah.wilson@sunsethotels.com",
+      "first_name": "Sarah",
+      "last_name": "Wilson",
+      "status": "active",
+      "invite_status": "accepted",
+      "assignments": [
+        {
+          "location_code": "UP",
+          "role": "member"
+        }
+      ]
+    },
+    {
+      "membership_id": "mbr_2005",
+      "external_id": "2005",
+      "user": {
+        "id": "usr_taylor",
+        "personal_email": ""
+      },
+      "corporate_email": "james.taylor@sunsethotels.com",
+      "first_name": "James",
+      "last_name": "Taylor",
+      "status": "active",
+      "invite_status": "accepted",
+      "assignments": [
+        {
+          "location_code": "DT",
+          "role": "member"
+        }
+      ]
+    },
+    {
+      "membership_id": "mbr_2006",
+      "external_id": "2006",
+      "user": {
+        "id": "usr_martin",
+        "personal_email": ""
+      },
+      "corporate_email": "linda.martin@sunsethotels.com",
+      "first_name": "Linda",
+      "last_name": "Martin",
+      "status": "active",
+      "invite_status": "accepted",
+      "assignments": [
+        {
+          "location_code": "UP",
+          "role": "member"
+        }
+      ]
+    }
+  ]
+}

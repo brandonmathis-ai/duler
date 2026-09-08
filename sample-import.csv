@@ -1,0 +1,16 @@
+external_id,location_code,position_status,position_start_date,first_name,last_name,work_email,personal_email,use_personal_email_for_notification,home_phone
+1001,DT,Active,03/01/2026,Maria,Gomez,maria.gomez@sunsethotels.com,mgomez88@gmail.com,no,555-0101
+1001,UP,Active,05/15/2026,Maria,Gomez,maria.gomez@sunsethotels.com,mgomez88@gmail.com,no,555-0101
+1002,DT,Terminated,01/10/2025,David,Okafor,david.okafor@sunsethotels.com,,no,555-0102
+1003,DT,Active,02/20/2025,Robert,Chen,robert.chen@sunsethotels.com,rchen@gmail.com,no,555-0103
+1004,UP,Active,06/01/2026,Aisha,Bello,aisha.bello@sunsethotels.com,aisha.b@gmail.com,no,555-0104
+1005,DT,Active,04/12/2026,Sam,Rivera,sam.rivera@sunsethotels.com,sam.rivera@gmail.com,no,555-0105
+1007,,Active,07/01/2026,Priya,Nair,priya.nair@sunsethotels.com,,no,555-0107
+3007,UP,Active,08/01/2025,Robert,Chen,r.chen@sunsethotels.com,,no,555-0307
+2001,DT,Active,09/01/2024,John,Smith,john.smith@sunsethotels.com,,no,555-0201
+2002,DT,Active,09/01/2024,Emily,Davis,emily.davis@sunsethotels.com,,no,555-0202
+2003,UP,Active,10/15/2024,Michael,Brown,michael.brown@sunsethotels.com,,no,555-0203
+2004,UP,Active,11/01/2024,Sarah,Wilson,sarah.wilson@sunsethotels.com,,no,555-0204
+2005,DT,Active,12/01/2024,James,Taylor,james.taylor@sunsethotels.com,,no,555-0205
+2006,UP,Active,01/15/2025,Linda,Martin,linda.martin@sunsethotels.com,,no,555-0206
+
