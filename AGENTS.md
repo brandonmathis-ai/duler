@@ -40,7 +40,9 @@ Duler is an HRIS member sync application that ingests payroll exports and reconc
 
 - Use a shallow `describe "when ..."` for the scenario and `it "..."` for the expected behavior.
 - Keep each example self-contained: setup, exercise, and verification belong inside `it`, separated by blank lines. Prefer explicit local variables and a little duplication over nested contexts, `let`, `before`, `subject`, or shared examples that hide the test's flow.
+- Reference the class under test explicitly do not use `described_class` in specs or test pseudocode.
 - Keep factories minimal; opt into extra associations with traits only when needed.
+- Do not change shared factory defaults unless absolutely necessary; prefer explicit values in the spec that needs them.
 - Use deterministic, explicit test data instead of random values or Faker; cover unusual inputs deliberately.
 - In feature/system specs, interact with and assert user-visible text rather than CSS classes, IDs, or DOM structure. Prefer `I18n.t` for translated labels.
 
