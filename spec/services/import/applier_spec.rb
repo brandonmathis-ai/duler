@@ -4,7 +4,7 @@ require 'rails_helper'
 
 RSpec.describe Import::Applier do
   describe '#apply' do
-    it 'terminates an absent member without deleting roster history' do
+    it 'terminates an absent member without deleting roster history', :aggregate_failures do
       member = create_active_absent_member
 
       described_class.new.apply(offboard_absent_plan(member.id))
@@ -23,7 +23,7 @@ RSpec.describe Import::Applier do
     end
 
     it 'is safe to re-run the same empty plan without creating duplicate members' do
-      expect 2.times { described_class.new.apply(empty_plan) }.not_to change(Member, :count)
+      expect { 2.times { described_class.new.apply(empty_plan) } }.not_to change(Member, :count)
     end
   end
 

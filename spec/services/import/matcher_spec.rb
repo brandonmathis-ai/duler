@@ -5,7 +5,7 @@ require 'rails_helper'
 RSpec.describe Import::Matcher do
   describe '#match' do
     it 'prefers the stable payroll external id over email or name' do
-      match = Import::Matcher.new(roster_with_changed_email).match(changed_email_payroll_row)
+      match = described_class.new(roster_with_changed_email).match(changed_email_payroll_row)
 
       expect(match).to include(member: changed_email_member, match_key: 'external_id')
     end
