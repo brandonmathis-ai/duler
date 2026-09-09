@@ -8,11 +8,12 @@ module Import
 
     def initialize(roster = [])
       @roster = roster
+      @index = build_index(roster)
     end
 
     def match(canonical_row)
-      external_matches = matches_by_external_id(canonical_row)
-      email_matches = matches_by_email(canonical_row)
+      external_matches = lookup(:external_id, value_for(canonical_row, :external_id))
+      email_matches = lookup(:corporate_email, value_for(canonical_row, :work_email))
 
       conflict = conflict_match(external_matches, email_matches)
       return conflict if conflict
@@ -25,18 +26,31 @@ module Import
 
     private
 
-    def matches_by_external_id(row)
-      id = value_for(row, :external_id)
-      return [] if id.blank?
+    # Builds a lookup table keyed by identity_key(:external_id, value) and
+    # identity_key(:corporate_email, value) so matches are O(1) hash lookups
+    # instead of linear scans over the roster.
+    def build_index(roster)
+      index = Hash.new { |h, k| h[k] = [] }
 
-      roster.select { |m| value_for(m, :external_id).to_s == id.to_s }
+      roster.each do |member|
+        external_id = value_for(member, :external_id)
+        index[identity_key(:external_id, external_id)] << member if external_id.present?
+
+        email = value_for(member, :corporate_email)
+        index[identity_key(:corporate_email, email)] << member if email.present?
+      end
+
+      index
     end
 
-    def matches_by_email(row)
-      email = value_for(row, :work_email)
-      return [] if email.blank?
+    def lookup(attribute, value)
+      return [] if value.blank?
 
-      roster.select { |m| value_for(m, :corporate_email).to_s.casecmp?(email.to_s) }
+      @index[identity_key(attribute, value)]
+    end
+
+    def identity_key(attribute, value)
+      "#{attribute}:#{value.to_s.downcase}"
     end
 
     def conflict_match(external_matches, email_matches)

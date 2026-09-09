@@ -30,8 +30,6 @@ RSpec.describe 'Api::Roster', type: :request do
 
         get '/api/roster'
 
-        ap response.parsed_body
-
         expect(response.parsed_body['members'].sole).to eq(
           'membership_id' => "mbr_#{member.id}",
           'external_id' => '1002',
