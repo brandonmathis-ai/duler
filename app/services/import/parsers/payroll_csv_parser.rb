@@ -19,11 +19,18 @@ module Import
       VALID_POSITION_STATUSES = %w[active terminated].freeze
 
       def parse(io)
-        rows = CSV.new(io, headers: true).each.with_index(2).reject { |row, _| blank_row?(row) }
-        grouped_rows = rows.group_by do |row, source_row|
+        grouped_rows = Hash.new { |hash, key| hash[key] = [] }
+        source_row = 1
+
+        # Streams the CSV row-by-row
+        CSV.new(io, headers: true).each do |row|
+          source_row += 1
+          next if blank_row?(row)
+
           external_id = field(row, 'external_id')
           # Keep rows without an external ID separate so invalid records are not merged.
-          external_id.presence || "source_row:#{source_row}"
+          key = external_id.presence || "source_row:#{source_row}"
+          grouped_rows[key] << [row, source_row]
         end
 
         grouped_rows.values.map { |rows| incoming_employee_for(rows) }
