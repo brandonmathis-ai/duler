@@ -9,6 +9,7 @@ Rails.application.routes.draw do
 
   namespace :api do
     get 'hello', to: 'hello#show'
+    get 'roster', to: 'roster#index'
   end
 
   get 'hello', to: 'api/hello#show', constraints: lambda { |request|
