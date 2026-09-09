@@ -46,12 +46,12 @@ module Import
     end
 
     def scope_for_emails(canonical_rows)
-      emails = canonical_rows.filter_map { |row| value_for(row, :corporate_email).presence }
+      emails = canonical_rows.filter_map { |row| value_for(row, :work_email).presence }
       @roster.where(corporate_email: emails) if emails.present?
     end
 
     def query_users_for(canonical_rows)
-      emails = canonical_rows.filter_map { |row| value_for(row, :corporate_email).presence }
+      emails = canonical_rows.filter_map { |row| value_for(row, :work_email).presence }
       return {} if emails.empty?
 
       User.where(login_email: emails).index_by(&:login_email)
@@ -91,7 +91,7 @@ module Import
     end
 
     def new_entry_for(row, users_by_email)
-      user = users_by_email[value_for(row, :corporate_email)]
+      user = users_by_email[value_for(row, :work_email)]
       category = user ? :new_with_account : :new_invite
       invite_status = user ? 'accepted' : 'pending'
 
@@ -167,7 +167,7 @@ module Import
         external_id: value_for(row, :external_id),
         first_name: value_for(row, :first_name),
         last_name: value_for(row, :last_name),
-        corporate_email: value_for(row, :corporate_email),
+        corporate_email: value_for(row, :work_email),
         status: status_for(row),
         assignments: assignments_for(row)
       }.compact

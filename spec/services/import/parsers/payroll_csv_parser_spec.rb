@@ -30,8 +30,8 @@ RSpec.describe Import::Parsers::PayrollCsvParser do
         expect(employee).to have_attributes(
           external_id: '1003',
           first_name: 'Jean-Luc',
-          last_name: "O'Connor",
-          corporate_email: 'jean-luc.oconnor@sunset.com'
+          last_name: 'O’Connor',
+          work_email: 'jean-luc.oconnor@sunset.com'
         )
         expect(employee.positions).to contain_exactly(
           have_attributes(location_code: 'DT', status: 'active')
@@ -79,7 +79,7 @@ RSpec.describe Import::Parsers::PayrollCsvParser do
           external_id: '1005',
           first_name: 'Sam',
           last_name: 'Rivera',
-          corporate_email: 'sam.rivera@sunsethotels.com'
+          work_email: 'sam.rivera@sunsethotels.com'
         )
         expect(sam.positions).to contain_exactly(
           have_attributes(location_code: 'DT', status: 'active')

@@ -33,7 +33,7 @@ module Import
     end
 
     def matches_by_email(row)
-      email = value_for(row, :corporate_email)
+      email = value_for(row, :work_email)
       return [] if email.blank?
 
       roster.select { |m| value_for(m, :corporate_email).to_s.casecmp?(email.to_s) }

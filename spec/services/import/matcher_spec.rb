@@ -34,7 +34,7 @@ RSpec.describe Import::Matcher do
       external_id: '1003',
       first_name: 'Robert',
       last_name: 'Chen',
-      corporate_email: 'robert.chen@sunsethotels.com'
+      work_email: 'robert.chen@sunsethotels.com'
     }
   end
 
@@ -57,7 +57,7 @@ RSpec.describe Import::Matcher do
       external_id: nil,
       first_name: 'Sam',
       last_name: 'Rivera',
-      corporate_email: 'sam.rivera@sunsethotels.com'
+      work_email: 'sam.rivera@sunsethotels.com'
     }
   end
 
@@ -80,7 +80,7 @@ RSpec.describe Import::Matcher do
       external_id: '1005',
       first_name: 'Sam',
       last_name: 'Rivera',
-      corporate_email: 'sam.rivera@sunsethotels.com'
+      work_email: 'sam.rivera@sunsethotels.com'
     }
   end
 
@@ -101,7 +101,7 @@ RSpec.describe Import::Matcher do
       external_id: '9999',
       first_name: 'Sam',
       last_name: 'Rivera',
-      corporate_email: 'sam.rivera.new@sunsethotels.com'
+      work_email: 'sam.rivera.new@sunsethotels.com'
     }
   end
 

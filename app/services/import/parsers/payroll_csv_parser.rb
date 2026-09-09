@@ -5,7 +5,7 @@ module Import
     :external_id,
     :first_name,
     :last_name,
-    :corporate_email,
+    :work_email,
     :positions,
     :source_rows,
     :issues
@@ -21,6 +21,7 @@ module Import
       def parse(io)
         grouped_rows = CSV.new(io, headers: true).each.with_index(2).group_by do |row, source_row|
           external_id = field(row, 'external_id')
+          # Keep rows without an external ID separate so invalid records are not merged.
           external_id.presence || "source_row:#{source_row}"
         end
 
@@ -32,43 +33,41 @@ module Import
       def incoming_employee_for(rows)
         first_row, = rows.first
         positions = rows.map { |row, source_row| incoming_position_for(row, source_row) }
+        issues = validate_employee_data(first_row, positions)
 
         Import::IncomingEmployee.new(
           **person_attributes_for(first_row),
           positions: positions,
           source_rows: rows.map(&:second),
-          issues: employee_issues_for(first_row, positions)
+          issues: issues
         )
       end
 
       def person_attributes_for(row)
         {
           external_id: field(row, 'external_id'),
-          first_name: normalize_name(field(row, 'first_name')),
-          last_name: normalize_name(field(row, 'last_name')),
-          corporate_email: field(row, 'work_email', 'corporate_email')&.downcase
+          first_name: field(row, 'first_name'),
+          last_name: field(row, 'last_name'),
+          work_email: field(row, 'work_email')&.downcase
         }
-      end
-
-      def normalize_name(name)
-        name&.tr('’‘`', "'''")
       end
 
       def incoming_position_for(row, source_row)
         status = field(row, 'position_status').to_s.downcase
-        issues = []
-        issues << :invalid_position_status unless VALID_POSITION_STATUSES.include?(status)
 
         Import::IncomingPosition.new(
           location_code: field(row, 'location_code')&.upcase,
           status: status,
           source_row: source_row,
-          issues: issues
+          issues: []
         )
       end
 
-      def employee_issues_for(row, positions)
+      def validate_employee_data(row, positions)
         issues = positions.flat_map(&:issues)
+        if positions.any? { |position| VALID_POSITION_STATUSES.exclude?(position.status) }
+          issues << :invalid_position_status
+        end
         issues << :missing_external_id if field(row, 'external_id').blank?
         issues.uniq
       end
