@@ -76,6 +76,7 @@ GEM
       tzinfo (~> 2.0, >= 2.0.5)
       uri (>= 0.13.1)
     ast (2.4.3)
+    awesome_print (1.9.2)
     base64 (0.3.0)
     bigdecimal (4.1.2)
     bootsnap (1.25.0)
@@ -336,6 +337,7 @@ PLATFORMS
   x86_64-linux
 
 DEPENDENCIES
+  awesome_print (~> 1.9)
   bootsnap
   brakeman
   bundler-audit

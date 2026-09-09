@@ -57,3 +57,5 @@ group :development, :test do
 end
 
 gem 'vite_rails', '~> 3.11'
+
+gem 'awesome_print', '~> 1.9'
