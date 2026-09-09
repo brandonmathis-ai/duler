@@ -41,24 +41,24 @@ module Import
     end
 
     def scope_for_external_ids(canonical_rows)
-      external_ids = canonical_rows.filter_map { |row| value_for(row, :external_id).presence }
+      external_ids = canonical_rows.filter_map { |row| row.external_id.presence }
       @roster.where(external_id: external_ids) if external_ids.present?
     end
 
     def scope_for_emails(canonical_rows)
-      emails = canonical_rows.filter_map { |row| value_for(row, :work_email).presence }
+      emails = canonical_rows.filter_map { |row| row.work_email.presence }
       @roster.where(corporate_email: emails) if emails.present?
     end
 
     def query_users_for(canonical_rows)
-      emails = canonical_rows.filter_map { |row| value_for(row, :work_email).presence }
+      emails = canonical_rows.filter_map { |row| row.work_email.presence }
       return {} if emails.empty?
 
       User.where(login_email: emails).index_by(&:login_email)
     end
 
     def entry_for(row, matcher, users_by_email)
-      return unprocessable_entry_for(row) if value_for(row, :issues).present?
+      return unprocessable_entry_for(row) if row.issues.present?
 
       match = matcher.match(row)
       return conflict_entry_for(row, match.fetch(:candidates)) if match.fetch(:category) == :conflict
@@ -74,8 +74,8 @@ module Import
         category: :unprocessable,
         match_key: match_key_for(row),
         after: incoming_attributes_for(row),
-        source_rows: value_for(row, :source_rows),
-        reasons: value_for(row, :issues)
+        source_rows: row.source_rows,
+        reasons: row.issues
       )
     end
 
@@ -85,13 +85,13 @@ module Import
         match_key: match_key_for(row),
         candidate_member_ids: candidates.map { |member| member_id_for(member) },
         after: incoming_attributes_for(row),
-        source_rows: value_for(row, :source_rows),
+        source_rows: row.source_rows,
         reasons: [:identity_conflict]
       )
     end
 
     def new_entry_for(row, users_by_email)
-      user = users_by_email[value_for(row, :work_email)]
+      user = users_by_email[row.work_email]
       category = user ? :new_with_account : :new_invite
       invite_status = user ? 'accepted' : 'pending'
 
@@ -100,7 +100,7 @@ module Import
         match_key: match_key_for(row),
         user_id: user&.id,
         after: incoming_attributes_for(row).merge(invite_status: invite_status),
-        source_rows: value_for(row, :source_rows)
+        source_rows: row.source_rows
       )
     end
 
@@ -118,12 +118,12 @@ module Import
         matched_member_id: member_id_for(member),
         before: before,
         after: after,
-        source_rows: value_for(row, :source_rows)
+        source_rows: row.source_rows
       }
     end
 
     def absence_entries_for(canonical_rows, records)
-      external_ids = canonical_rows.filter_map { |row| value_for(row, :external_id).presence }
+      external_ids = canonical_rows.filter_map { |row| row.external_id.presence }
       accounted_ids = accounted_member_ids_for(records)
 
       absent_scope = @roster.where(status: 'active')
@@ -144,7 +144,7 @@ module Import
     def absence_entry_for(member)
       Import::Plan::Entry.new(
         category: :offboard_absent,
-        match_key: "external_id:#{value_for(member, :external_id)}",
+        match_key: "external_id:#{member.external_id}",
         matched_member_id: member_id_for(member),
         before: member_attributes_for(member),
         after: member_attributes_for(member).merge(status: 'terminated'),
@@ -164,10 +164,10 @@ module Import
 
     def incoming_attributes_for(row)
       {
-        external_id: value_for(row, :external_id),
-        first_name: value_for(row, :first_name),
-        last_name: value_for(row, :last_name),
-        corporate_email: value_for(row, :work_email),
+        external_id: row.external_id,
+        first_name: row.first_name,
+        last_name: row.last_name,
+        corporate_email: row.work_email,
         status: status_for(row),
         assignments: assignments_for(row)
       }.compact
@@ -181,12 +181,12 @@ module Import
 
     def member_attributes_for(member)
       {
-        external_id: value_for(member, :external_id),
-        first_name: value_for(member, :first_name),
-        last_name: value_for(member, :last_name),
-        corporate_email: value_for(member, :corporate_email),
-        status: value_for(member, :status),
-        invite_status: value_for(member, :invite_status)
+        external_id: member.external_id,
+        first_name: member.first_name,
+        last_name: member.last_name,
+        corporate_email: member.corporate_email,
+        status: member.status,
+        invite_status: member.invite_status
       }.compact
     end
 
@@ -195,23 +195,15 @@ module Import
     end
 
     def active_positions_for(row)
-      value_for(row, :positions).select { |position| position.status == 'active' }
+      row.positions.select { |position| position.status == 'active' }
     end
 
     def match_key_for(row)
-      "external_id:#{value_for(row, :external_id)}"
+      "external_id:#{row.external_id}"
     end
 
     def member_id_for(member)
-      value_for(member, :id) || value_for(member, :membership_id)
-    end
-
-    def value_for(record, attribute)
-      if record.respond_to?(attribute)
-        record.public_send(attribute)
-      else
-        record[attribute]
-      end
+      member.id
     end
     # rubocop:enable Metrics/ClassLength
   end
