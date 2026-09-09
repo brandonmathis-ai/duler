@@ -19,7 +19,8 @@ module Import
       VALID_POSITION_STATUSES = %w[active terminated].freeze
 
       def parse(io)
-        grouped_rows = CSV.new(io, headers: true).each.with_index(2).group_by do |row, source_row|
+        rows = CSV.new(io, headers: true).each.with_index(2).reject { |row, _| blank_row?(row) }
+        grouped_rows = rows.group_by do |row, source_row|
           external_id = field(row, 'external_id')
           # Keep rows without an external ID separate so invalid records are not merged.
           external_id.presence || "source_row:#{source_row}"
@@ -29,6 +30,12 @@ module Import
       end
 
       private
+
+      # Trailing newlines and separator rows carry no employee at all, so they
+      # are dropped rather than reported as unprocessable.
+      def blank_row?(row)
+        row.fields.all?(&:blank?)
+      end
 
       def incoming_employee_for(rows)
         first_row, = rows.first
