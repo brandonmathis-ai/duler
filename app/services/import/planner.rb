@@ -16,10 +16,10 @@ module Import
       matcher = Import::Matcher.new(members)
 
       records = canonical_rows.map do |row|
-        entry_for(row, matcher, users_by_email)
+        build_entry_for(row, matcher, users_by_email)
       end
 
-      records.concat(absence_entries_for(canonical_rows, records))
+      records.concat(absence_entries_for(records))
 
       Import::Plan.new(records: records)
     end
@@ -57,10 +57,11 @@ module Import
       User.where(login_email: emails).index_by(&:login_email)
     end
 
-    def entry_for(row, matcher, users_by_email)
-      return unprocessable_entry_for(row) if row.issues.present?
-
+    # Builds a plan entry by first rejecting invalid rows, then converting the
+    # matcher's conflict, new-member, or existing-member result into a record.
+    def build_entry_for(row, matcher, users_by_email)
       match = matcher.match(row)
+      return unprocessable_entry_for(row, match) if row.issues.present?
       return conflict_entry_for(row, match.fetch(:candidates)) if match.fetch(:category) == :conflict
 
       member = match.fetch(:member)
@@ -69,14 +70,30 @@ module Import
       matched_entry_for(row, member)
     end
 
-    def unprocessable_entry_for(row)
+    # A row with issues is never applied, but we still attempt a best-effort
+    # match so the referenced member (if any) is held out of the absence scan
+    # below instead of being wrongly flagged as offboard_absent.
+    def unprocessable_entry_for(row, match)
       Import::Plan::Entry.new(
         category: :unprocessable,
         match_key: match_key_for(row),
+        matched_member_id: unprocessable_matched_id_for(match),
+        candidate_member_ids: unprocessable_candidate_ids_for(match),
         after: incoming_attributes_for(row),
         source_rows: row.source_rows,
         reasons: row.issues
       )
+    end
+
+    def unprocessable_matched_id_for(match)
+      member = match.fetch(:member)
+      member && member_id_for(member)
+    end
+
+    def unprocessable_candidate_ids_for(match)
+      return [] unless match.fetch(:category) == :conflict
+
+      match.fetch(:candidates).map { |member| member_id_for(member) }
     end
 
     def conflict_entry_for(row, candidates)
@@ -108,37 +125,26 @@ module Import
       before = member_attributes_for(member)
       after = incoming_attributes_for(row).merge(status: status_for(row))
 
-      Import::Plan::Entry.new(**matched_entry_attributes(row, member, before, after))
-    end
-
-    def matched_entry_attributes(row, member, before, after)
-      {
+      Import::Plan::Entry.new(
         category: category_for(before, after),
         match_key: match_key_for(row),
         matched_member_id: member_id_for(member),
         before: before,
         after: after,
         source_rows: row.source_rows
-      }
+      )
     end
 
-    def absence_entries_for(canonical_rows, records)
-      external_ids = canonical_rows.filter_map { |row| row.external_id.presence }
-      accounted_ids = accounted_member_ids_for(records)
-
+    # Absent = every active roster member not already accounted for by a
+    # built record (matched, a conflict candidate, or held by an
+    # unprocessable row). This is the inverse of what the plan already
+    # applies, rather than a second, independent identity check.
+    def absence_entries_for(records)
+      accounted_ids = Import::Plan.new(records: records).accounted_member_ids
       absent_scope = @roster.where(status: 'active')
-      absent_scope = absent_scope.where.not(external_id: external_ids) if external_ids.present?
       absent_scope = absent_scope.where.not(id: accounted_ids) if accounted_ids.present?
 
-      absent_scope.map do |member|
-        absence_entry_for(member)
-      end
-    end
-
-    def accounted_member_ids_for(records)
-      records.flat_map do |record|
-        [record.matched_member_id, *record.candidate_member_ids]
-      end.compact
+      absent_scope.map { |member| absence_entry_for(member) }
     end
 
     def absence_entry_for(member)

@@ -294,6 +294,22 @@ RSpec.describe Import::Planner do
       end
     end
 
+    context 'when an unprocessable row matches an active member' do
+      it 'does not also flag that member as absent' do
+        member = create(:member, external_id: '1007', first_name: 'Priya',
+                                 last_name: 'Nair', status: 'active',
+                                 corporate_email: 'priya.nair@sunsethotels.com')
+        csv = StringIO.new(csv_with_invalid_status)
+
+        employees = Import::Parsers::PayrollCsvParser.new.parse(csv)
+        plan = Import::Planner.new(Member.all).plan(employees)
+
+        expect(plan.records).to contain_exactly(
+          have_attributes(category: :unprocessable, matched_member_id: member.id)
+        )
+      end
+    end
+
     context 'when terminated employee returns active' do
       it 'plans reactivation of member' do
         member = create(:member, external_id: '1002', first_name: 'David',
