@@ -2,6 +2,17 @@
 
 require 'rails_helper'
 
+PayrollRow = Struct.new(
+  :external_id,
+  :first_name,
+  :last_name,
+  :work_email,
+  :positions,
+  :source_rows,
+  :issues,
+  keyword_init: true
+)
+
 RSpec.describe Import::Matcher do
   describe '#match' do
     it 'prefers the stable payroll external id over email' do
@@ -30,22 +41,24 @@ RSpec.describe Import::Matcher do
   end
 
   def changed_email_payroll_row
-    {
+    PayrollRow.new(
       external_id: '1003',
       first_name: 'Robert',
       last_name: 'Chen',
-      work_email: 'robert.chen@sunsethotels.com'
-    }
+      work_email: 'robert.chen@sunsethotels.com',
+      positions: [],
+      source_rows: ['row-1'],
+      issues: []
+    )
   end
 
   def changed_email_member
-    {
-      membership_id: 'mbr_1003',
+    @changed_email_member ||= Member.new(
       external_id: '1003',
       corporate_email: 'old.email@sunsethotels.com',
       first_name: 'Robert',
       last_name: 'Chen'
-    }
+    )
   end
 
   def roster_with_changed_email
@@ -53,22 +66,24 @@ RSpec.describe Import::Matcher do
   end
 
   def legacy_member_payroll_row
-    {
+    PayrollRow.new(
       external_id: nil,
       first_name: 'Sam',
       last_name: 'Rivera',
-      work_email: 'sam.rivera@sunsethotels.com'
-    }
+      work_email: 'sam.rivera@sunsethotels.com',
+      positions: [],
+      source_rows: ['row-2'],
+      issues: []
+    )
   end
 
   def legacy_member
-    {
-      membership_id: 'mbr_5042',
+    @legacy_member ||= Member.new(
       external_id: nil,
       corporate_email: 'sam.rivera@sunsethotels.com',
       first_name: 'Sam',
       last_name: 'Rivera'
-    }
+    )
   end
 
   def roster_with_legacy_member
@@ -76,12 +91,15 @@ RSpec.describe Import::Matcher do
   end
 
   def conflict_payroll_row
-    {
+    PayrollRow.new(
       external_id: '1005',
       first_name: 'Sam',
       last_name: 'Rivera',
-      work_email: 'sam.rivera@sunsethotels.com'
-    }
+      work_email: 'sam.rivera@sunsethotels.com',
+      positions: [],
+      source_rows: ['row-3'],
+      issues: []
+    )
   end
 
   def conflicting_roster
@@ -89,37 +107,35 @@ RSpec.describe Import::Matcher do
   end
 
   def external_id_sam
-    member_named_sam('mbr_5041', '1005', 'srivera@sunsethotels.com')
+    @external_id_sam ||= member_named_sam('1005', 'srivera@sunsethotels.com')
   end
 
   def email_only_sam
-    member_named_sam('mbr_5042', nil, 'sam.rivera@sunsethotels.com')
+    @email_only_sam ||= member_named_sam(nil, 'sam.rivera@sunsethotels.com')
   end
 
   def new_employee_same_name_payroll_row
-    {
+    PayrollRow.new(
       external_id: '9999',
       first_name: 'Sam',
       last_name: 'Rivera',
-      work_email: 'sam.rivera.new@sunsethotels.com'
-    }
-  end
-
-  def first_sam_rivera_member
-    member_named_sam(
-      'mbr_1005',
-      '1005',
-      'srivera@sunsethotels.com'
+      work_email: 'sam.rivera.new@sunsethotels.com',
+      positions: [],
+      source_rows: ['row-4'],
+      issues: []
     )
   end
 
-  def member_named_sam(membership_id, external_id, corporate_email)
-    {
-      membership_id: membership_id,
+  def first_sam_rivera_member
+    @first_sam_rivera_member ||= member_named_sam('1005', 'srivera@sunsethotels.com')
+  end
+
+  def member_named_sam(external_id, corporate_email)
+    Member.new(
       external_id: external_id,
       corporate_email: corporate_email,
       first_name: 'Sam',
       last_name: 'Rivera'
-    }
+    )
   end
 end

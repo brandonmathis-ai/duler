@@ -12,8 +12,8 @@ module Import
     end
 
     def match(canonical_row)
-      external_matches = lookup(:external_id, value_for(canonical_row, :external_id))
-      email_matches = lookup(:corporate_email, value_for(canonical_row, :work_email))
+      external_matches = lookup(:external_id, canonical_row.external_id)
+      email_matches = lookup(:corporate_email, canonical_row.work_email)
 
       conflict = conflict_match(external_matches, email_matches)
       return conflict if conflict
@@ -33,10 +33,10 @@ module Import
       index = Hash.new { |h, k| h[k] = [] }
 
       roster.each do |member|
-        external_id = value_for(member, :external_id)
+        external_id = member.external_id
         index[identity_key(:external_id, external_id)] << member if external_id.present?
 
-        email = value_for(member, :corporate_email)
+        email = member.corporate_email
         index[identity_key(:corporate_email, email)] << member if email.present?
       end
 
@@ -63,14 +63,6 @@ module Import
 
     def single_match(member, match_key)
       { category: :match, member: member, match_key: match_key }
-    end
-
-    def value_for(record, attribute)
-      if record.respond_to?(attribute)
-        record.public_send(attribute)
-      elsif record.respond_to?(:[])
-        record[attribute]
-      end
     end
   end
 end
