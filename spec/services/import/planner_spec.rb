@@ -5,13 +5,15 @@
 require 'rails_helper'
 
 RSpec.describe Import::Planner do
+  let(:organization) { create(:organization, name: 'Sunset Hotels') }
+
   describe '#initialize' do
     context 'when initialized' do
       it 'leaves roster unqueried' do
-        create(:member, external_id: '1001', first_name: 'Maria',
+        create(:member, organization:, external_id: '1001', first_name: 'Maria',
                         last_name: 'Gomez', corporate_email: 'maria@example.com')
 
-        planner = Import::Planner.new(Member.all)
+        planner = Import::Planner.new(organization)
 
         expect(planner.roster).to be_a(ActiveRecord::Relation)
         expect(planner.roster.klass).to eq(Member)
@@ -26,7 +28,7 @@ RSpec.describe Import::Planner do
         csv = StringIO.new(aisha_active_csv)
 
         employees = Import::Parsers::PayrollCsvParser.new.parse(csv)
-        plan = Import::Planner.new(Member.all).plan(employees)
+        plan = Import::Planner.new(organization).plan(employees)
         entry = entry_for(plan, external_id: '1004')
 
         expect(entry).to have_attributes(
@@ -44,13 +46,13 @@ RSpec.describe Import::Planner do
 
     context 'when an existing employee has a new corporate email' do
       it 'plans an update entry' do
-        member = create(:member, external_id: '1003', first_name: 'Robert',
+        member = create(:member, organization:, external_id: '1003', first_name: 'Robert',
                                  last_name: 'Chen', corporate_email: 'robert.c@oldmail.com',
                                  status: 'active')
         csv = StringIO.new(robert_new_email_csv)
 
         employees = Import::Parsers::PayrollCsvParser.new.parse(csv)
-        plan = Import::Planner.new(Member.all).plan(employees)
+        plan = Import::Planner.new(organization).plan(employees)
         entry = entry_for(plan, external_id: '1003')
 
         expect(entry).to have_attributes(
@@ -65,13 +67,13 @@ RSpec.describe Import::Planner do
 
     context 'when an existing employee has no external id in database but has one in payroll' do
       it 'matches by corporate email and plans an update for external id' do
-        member = create(:member, external_id: nil, first_name: 'Sam',
+        member = create(:member, organization:, external_id: nil, first_name: 'Sam',
                                  last_name: 'Rivera', corporate_email: 'sam.rivera@sunsethotels.com',
                                  status: 'active')
         csv = StringIO.new(sam_csv)
 
         employees = Import::Parsers::PayrollCsvParser.new.parse(csv)
-        plan = Import::Planner.new(Member.all).plan(employees)
+        plan = Import::Planner.new(organization).plan(employees)
         entry = entry_for(plan, external_id: '1005')
 
         expect(entry).to have_attributes(
@@ -86,13 +88,13 @@ RSpec.describe Import::Planner do
 
     context 'when employee appears in two property rows' do
       it 'produces one update entry' do
-        member = create(:member, external_id: '1001', first_name: 'Maria',
+        member = create(:member, organization:, external_id: '1001', first_name: 'Maria',
                                  last_name: 'Gomez', corporate_email: 'maria@oldmail.com',
                                  status: 'active')
         csv = StringIO.new(six_row_payroll_csv)
 
         employees = Import::Parsers::PayrollCsvParser.new.parse(csv)
-        plan = Import::Planner.new(Member.all).plan(employees)
+        plan = Import::Planner.new(organization).plan(employees)
         entries = entries_for(plan, external_id: '1001')
 
         expect(entries.size).to eq(1)
@@ -107,13 +109,13 @@ RSpec.describe Import::Planner do
 
     context 'when payroll explicitly reports termination' do
       it 'plans offboard termination' do
-        member = create(:member, external_id: '1002', first_name: 'David',
+        member = create(:member, organization:, external_id: '1002', first_name: 'David',
                                  last_name: 'Okafor', status: 'active',
                                  corporate_email: 'david.okafor@sunsethotels.com')
         csv = StringIO.new(david_terminated_csv)
 
         employees = Import::Parsers::PayrollCsvParser.new.parse(csv)
-        plan = Import::Planner.new(Member.all).plan(employees)
+        plan = Import::Planner.new(organization).plan(employees)
         entry = entry_for(plan, external_id: '1002')
 
         expect(entry).to have_attributes(
@@ -128,13 +130,13 @@ RSpec.describe Import::Planner do
 
     context 'when an employee is dropped from the snapshot' do
       it 'plans offboard for absent member' do
-        member = create(:member, external_id: '1006', first_name: 'Nina',
+        member = create(:member, organization:, external_id: '1006', first_name: 'Nina',
                                  last_name: 'Patel', status: 'active',
                                  corporate_email: 'nina.patel@sunsethotels.com')
         csv = StringIO.new(six_row_payroll_csv)
 
         employees = Import::Parsers::PayrollCsvParser.new.parse(csv)
-        plan = Import::Planner.new(Member.all).plan(employees)
+        plan = Import::Planner.new(organization).plan(employees)
         entry = entry_for(plan, external_id: '1006')
 
         expect(employees.map(&:external_id)).not_to include('1006')
@@ -151,13 +153,13 @@ RSpec.describe Import::Planner do
 
     context 'when payroll details already match the roster' do
       it 'plans an unchanged entry' do
-        create(:member, external_id: '2001', first_name: 'John',
+        create(:member, organization:, external_id: '2001', first_name: 'John',
                         last_name: 'Smith', status: 'active',
                         corporate_email: 'john.smith@sunsethotels.com')
         csv = StringIO.new(john_unchanged_csv)
 
         employees = Import::Parsers::PayrollCsvParser.new.parse(csv)
-        plan = Import::Planner.new(Member.all).plan(employees)
+        plan = Import::Planner.new(organization).plan(employees)
         entry = entry_for(plan, external_id: '2001')
 
         expect(entry.category).to eq(:unchanged)
@@ -167,19 +169,19 @@ RSpec.describe Import::Planner do
 
     context 'when an import has mixed employee outcomes' do
       it 'accounts for all rows and members' do
-        robert = create(:member, external_id: '1003', first_name: 'Robert',
+        robert = create(:member, organization:, external_id: '1003', first_name: 'Robert',
                                  last_name: 'Chen', status: 'active',
                                  corporate_email: 'robert.c@oldmail.com')
-        maria = create(:member, external_id: '1001', first_name: 'Maria',
+        maria = create(:member, organization:, external_id: '1001', first_name: 'Maria',
                                 last_name: 'Gomez', status: 'active',
                                 corporate_email: 'maria@oldmail.com')
-        david = create(:member, external_id: '1002', first_name: 'David',
+        david = create(:member, organization:, external_id: '1002', first_name: 'David',
                                 last_name: 'Okafor', status: 'active',
                                 corporate_email: 'david.okafor@sunsethotels.com')
-        nina = create(:member, external_id: '1006', first_name: 'Nina',
+        nina = create(:member, organization:, external_id: '1006', first_name: 'Nina',
                                last_name: 'Patel', status: 'active',
                                corporate_email: 'nina.patel@sunsethotels.com')
-        john = create(:member, external_id: '2001', first_name: 'John',
+        john = create(:member, organization:, external_id: '2001', first_name: 'John',
                                last_name: 'Smith', status: 'active',
                                corporate_email: 'john.smith@sunsethotels.com')
         create(:assignment, member: robert, location_code: 'DT', role: 'admin')
@@ -189,7 +191,7 @@ RSpec.describe Import::Planner do
         csv = StringIO.new(six_row_payroll_csv)
 
         employees = Import::Parsers::PayrollCsvParser.new.parse(csv)
-        plan = Import::Planner.new(Member.all).plan(employees)
+        plan = Import::Planner.new(organization).plan(employees)
 
         expect(plan.records.size).to eq(6)
         expect(plan.counts).to eq(
@@ -206,7 +208,7 @@ RSpec.describe Import::Planner do
 
     context 'when plan is computed but not applied' do
       it 'does not modify roster data' do
-        member = create(:member, external_id: '1003', first_name: 'Robert',
+        member = create(:member, organization:, external_id: '1003', first_name: 'Robert',
                                  last_name: 'Chen', status: 'active',
                                  corporate_email: 'robert.c@oldmail.com')
         create(:assignment, member: member, location_code: 'DT', role: 'admin')
@@ -214,7 +216,7 @@ RSpec.describe Import::Planner do
         before = persisted_roster_state
 
         employees = Import::Parsers::PayrollCsvParser.new.parse(csv)
-        Import::Planner.new(Member.all).plan(employees)
+        Import::Planner.new(organization).plan(employees)
 
         expect(persisted_roster_state).to eq(before)
       end
@@ -227,7 +229,7 @@ RSpec.describe Import::Planner do
         csv = StringIO.new(aisha_active_csv)
 
         employees = Import::Parsers::PayrollCsvParser.new.parse(csv)
-        plan = Import::Planner.new(Member.all).plan(employees)
+        plan = Import::Planner.new(organization).plan(employees)
 
         expect(entry_for(plan, external_id: '1004')).to have_attributes(
           category: :new_with_account,
@@ -237,16 +239,30 @@ RSpec.describe Import::Planner do
       end
     end
 
+    context 'when employee belongs to another org' do
+      it 'plans a new organization member' do
+        other_organization = create(:organization, name: 'Other Hotels')
+        create(:member, organization: other_organization, external_id: '1004',
+                        corporate_email: 'aisha.bello@sunsethotels.com')
+        csv = StringIO.new(aisha_active_csv)
+
+        employees = Import::Parsers::PayrollCsvParser.new.parse(csv)
+        plan = Import::Planner.new(organization).plan(employees)
+
+        expect(entry_for(plan, external_id: '1004').category).to eq(:new_invite)
+      end
+    end
+
     context 'when two employees share the same name' do
       it 'matches each by external id' do
-        first = create(:member, external_id: '1003', first_name: 'Robert',
+        first = create(:member, organization:, external_id: '1003', first_name: 'Robert',
                                 last_name: 'Chen', corporate_email: 'robert.chen@sunsethotels.com')
-        second = create(:member, external_id: '3007', first_name: 'Robert',
+        second = create(:member, organization:, external_id: '3007', first_name: 'Robert',
                                  last_name: 'Chen', corporate_email: 'r.chen@sunsethotels.com')
         csv = StringIO.new(two_roberts_csv)
 
         employees = Import::Parsers::PayrollCsvParser.new.parse(csv)
-        plan = Import::Planner.new(Member.all).plan(employees)
+        plan = Import::Planner.new(organization).plan(employees)
 
         expect(entry_for(plan, external_id: '1003').matched_member_id).to eq(first.id)
         expect(entry_for(plan, external_id: '3007').matched_member_id).to eq(second.id)
@@ -255,11 +271,11 @@ RSpec.describe Import::Planner do
 
     context 'when external id and email match different members' do
       it 'flags an identity conflict' do
-        pending = create(:member, external_id: '1005', first_name: 'Sam',
+        pending = create(:member, organization:, external_id: '1005', first_name: 'Sam',
                                   last_name: 'Rivera', corporate_email: 'srivera@sunsethotels.com',
                                   status: 'active', invite_status: 'pending', user: nil)
         accepted_user = create(:user)
-        accepted = create(:member, external_id: nil, first_name: 'Sam',
+        accepted = create(:member, organization:, external_id: nil, first_name: 'Sam',
                                    last_name: 'Rivera', status: 'active',
                                    corporate_email: 'sam.rivera@sunsethotels.com',
                                    invite_status: 'accepted', user: accepted_user)
@@ -267,7 +283,7 @@ RSpec.describe Import::Planner do
         csv = StringIO.new(sam_csv)
 
         employees = Import::Parsers::PayrollCsvParser.new.parse(csv)
-        plan = Import::Planner.new(Member.all).plan(employees)
+        plan = Import::Planner.new(organization).plan(employees)
         entry = entry_for(plan, external_id: '1005')
 
         expect(entry.category).to eq(:conflict)
@@ -282,7 +298,7 @@ RSpec.describe Import::Planner do
         csv = StringIO.new(csv_with_invalid_status)
 
         employees = Import::Parsers::PayrollCsvParser.new.parse(csv)
-        plan = Import::Planner.new(Member.all).plan(employees)
+        plan = Import::Planner.new(organization).plan(employees)
 
         expect(plan.records).to contain_exactly(
           have_attributes(
@@ -296,13 +312,13 @@ RSpec.describe Import::Planner do
 
     context 'when an unprocessable row matches an active member' do
       it 'does not also flag that member as absent' do
-        member = create(:member, external_id: '1007', first_name: 'Priya',
+        member = create(:member, organization:, external_id: '1007', first_name: 'Priya',
                                  last_name: 'Nair', status: 'active',
                                  corporate_email: 'priya.nair@sunsethotels.com')
         csv = StringIO.new(csv_with_invalid_status)
 
         employees = Import::Parsers::PayrollCsvParser.new.parse(csv)
-        plan = Import::Planner.new(Member.all).plan(employees)
+        plan = Import::Planner.new(organization).plan(employees)
 
         expect(plan.records).to contain_exactly(
           have_attributes(category: :unprocessable, matched_member_id: member.id)
@@ -312,13 +328,13 @@ RSpec.describe Import::Planner do
 
     context 'when terminated employee returns active' do
       it 'plans reactivation of member' do
-        member = create(:member, external_id: '1002', first_name: 'David',
+        member = create(:member, organization:, external_id: '1002', first_name: 'David',
                                  last_name: 'Okafor', status: 'terminated',
                                  corporate_email: 'david.okafor@sunsethotels.com')
         csv = StringIO.new(david_active_csv)
 
         employees = Import::Parsers::PayrollCsvParser.new.parse(csv)
-        plan = Import::Planner.new(Member.all).plan(employees)
+        plan = Import::Planner.new(organization).plan(employees)
         entry = entry_for(plan, external_id: '1002')
 
         expect(entry).to have_attributes(
@@ -332,14 +348,14 @@ RSpec.describe Import::Planner do
 
     context 'when payroll location differs from Duler assignment' do
       it 'updates only payroll fields' do
-        member = create(:member, external_id: '1003', first_name: 'Robert',
+        member = create(:member, organization:, external_id: '1003', first_name: 'Robert',
                                  last_name: 'Chen', status: 'active',
                                  corporate_email: 'robert.c@oldmail.com')
         create(:assignment, member: member, location_code: 'DT', role: 'admin')
         csv = StringIO.new(robert_new_email_uptown_csv)
 
         employees = Import::Parsers::PayrollCsvParser.new.parse(csv)
-        plan = Import::Planner.new(Member.all).plan(employees)
+        plan = Import::Planner.new(organization).plan(employees)
 
         expect(entry_for(plan, external_id: '1003').attributes_to_apply).to eq(
           corporate_email: 'robert.chen@sunsethotels.com'
@@ -350,14 +366,14 @@ RSpec.describe Import::Planner do
 
     context 'when determining absence entries' do
       it 'queries absent active members' do
-        create(:member, external_id: '1001', status: 'active')
-        absent = create(:member, external_id: '1002', status: 'active')
-        terminated = create(:member, external_id: '1003', status: 'terminated')
+        create(:member, organization:, external_id: '1001', status: 'active')
+        absent = create(:member, organization:, external_id: '1002', status: 'active')
+        terminated = create(:member, organization:, external_id: '1003', status: 'terminated')
         rows = ['1001,DT,Active,03/01/2026,Maria,Gomez,maria.gomez@sunsethotels.com,maria@example.com,no,555-0101']
         csv = StringIO.new(payroll_csv_for(rows))
 
         employees = Import::Parsers::PayrollCsvParser.new.parse(csv)
-        plan = Import::Planner.new(Member.all).plan(employees)
+        plan = Import::Planner.new(organization).plan(employees)
 
         expect(plan.records).to include(
           have_attributes(

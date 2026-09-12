@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_01_211141) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_12_181107) do
   create_table "assignments", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "location_code"
@@ -52,12 +52,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_01_211141) do
     t.string "first_name"
     t.string "invite_status"
     t.string "last_name"
+    t.integer "organization_id", null: false
     t.string "status"
     t.datetime "updated_at", null: false
     t.integer "user_id"
     t.index ["corporate_email"], name: "index_members_on_corporate_email"
     t.index ["external_id"], name: "index_members_on_external_id"
+    t.index ["organization_id", "user_id"], name: "index_members_on_organization_id_and_user_id", unique: true, where: "user_id IS NOT NULL"
+    t.index ["organization_id"], name: "index_members_on_organization_id"
     t.index ["user_id"], name: "index_members_on_user_id"
+  end
+
+  create_table "organizations", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "users", force: :cascade do |t|
@@ -69,5 +78,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_01_211141) do
 
   add_foreign_key "assignments", "members"
   add_foreign_key "import_records", "import_batches"
+  add_foreign_key "members", "organizations"
   add_foreign_key "members", "users"
 end

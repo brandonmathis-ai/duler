@@ -32,6 +32,7 @@ RSpec.describe Import::Applier do
 
         aisha = Member.find_by!(external_id: '1004')
         expect(aisha).to have_attributes(
+          organization_id: roster.fetch(:organization).id,
           first_name: 'Aisha',
           last_name: 'Bello',
           corporate_email: 'aisha.bello@sunsethotels.com',
@@ -131,21 +132,28 @@ RSpec.describe Import::Applier do
   end
 
   def seed_roster
+    organization = create(:organization, name: 'Sunset Hotels')
+
     {
-      maria: create(:member, external_id: '1001', first_name: 'Maria', last_name: 'Gomez',
-                             corporate_email: 'maria.gomez@sunsethotels.com', status: 'active'),
-      david: create(:member, external_id: '1002', first_name: 'David', last_name: 'Okafor',
-                             corporate_email: 'david.okafor@sunsethotels.com', status: 'active'),
-      absent: create(:member, external_id: '1006', first_name: 'Lena', last_name: 'Park',
-                              corporate_email: 'lena.park@sunsethotels.com', status: 'active'),
-      robert: create(:member, external_id: '1003', first_name: 'Robert', last_name: 'Chen',
-                              corporate_email: 'robert.c@oldmail.com', status: 'active'),
-      frank: create(:member, external_id: '1007', first_name: 'Frank', last_name: 'Wright',
-                             corporate_email: 'frank.w@oldmail.com', status: 'active'),
-      priya: create(:member, external_id: '1099', first_name: 'Priya', last_name: 'Nair',
-                             corporate_email: 'priya.nair@sunsethotels.com', status: 'active'),
+      organization: organization,
+      maria: create_member(organization, external_id: '1001', first_name: 'Maria', last_name: 'Gomez',
+                                         corporate_email: 'maria.gomez@sunsethotels.com'),
+      david: create_member(organization, external_id: '1002', first_name: 'David', last_name: 'Okafor',
+                                         corporate_email: 'david.okafor@sunsethotels.com'),
+      absent: create_member(organization, external_id: '1006', first_name: 'Lena', last_name: 'Park',
+                                          corporate_email: 'lena.park@sunsethotels.com'),
+      robert: create_member(organization, external_id: '1003', first_name: 'Robert', last_name: 'Chen',
+                                          corporate_email: 'robert.c@oldmail.com'),
+      frank: create_member(organization, external_id: '1007', first_name: 'Frank', last_name: 'Wright',
+                                         corporate_email: 'frank.w@oldmail.com'),
+      priya: create_member(organization, external_id: '1099', first_name: 'Priya', last_name: 'Nair',
+                                         corporate_email: 'priya.nair@sunsethotels.com'),
       sam_user: create(:user, first_name: 'Sam', last_name: 'Rivera')
     }
+  end
+
+  def create_member(organization, **attributes)
+    create(:member, organization: organization, status: 'active', **attributes)
   end
 
   def assignment_state(member)
@@ -153,7 +161,10 @@ RSpec.describe Import::Applier do
   end
 
   def update_plan(roster, approved: true)
-    plan = Import::Plan.new(records: mixed_entries(roster))
+    plan = Import::Plan.new(
+      organization_id: roster.fetch(:organization).id,
+      records: mixed_entries(roster)
+    )
     approved ? plan.approve! : plan
   end
 

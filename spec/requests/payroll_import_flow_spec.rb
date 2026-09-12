@@ -11,7 +11,7 @@ RSpec.describe 'Payroll import flow', type: :request do
   it 'plans every roster member and every file row' do
     seed_roster_from_fixture
 
-    plan = Import::Planner.new.plan(parse_sample_import)
+    plan = Import::Planner.new(organization).plan(parse_sample_import)
 
     expect(plan.counts).to eq(
       new_invite: 3,
@@ -26,7 +26,7 @@ RSpec.describe 'Payroll import flow', type: :request do
   it 'categorizes each file row by external id' do
     seed_roster_from_fixture
 
-    plan = Import::Planner.new.plan(parse_sample_import)
+    plan = Import::Planner.new(organization).plan(parse_sample_import)
     categories = plan.records.to_h { |record| [record.match_key, record.category] }
 
     expect(categories).to eq(
@@ -61,7 +61,7 @@ RSpec.describe 'Payroll import flow', type: :request do
     seed_roster_from_fixture
     before_body = (get '/api/roster') && response.parsed_body
 
-    Import::Planner.new.plan(parse_sample_import)
+    Import::Planner.new(organization).plan(parse_sample_import)
     get '/api/roster'
 
     expect(response.parsed_body).to eq(before_body)
@@ -119,12 +119,14 @@ RSpec.describe 'Payroll import flow', type: :request do
   end
 
   def seed_roster_from_fixture
+    organization
     fixture_roster['members'].each { |member| seed_member(member) }
   end
 
   def seed_member(member)
     user = member['user'] && User.create!(personal_email: member['user']['personal_email'])
     record = Member.create!(
+      organization: organization,
       user: user,
       **member.slice('external_id', 'corporate_email', 'first_name', 'last_name',
                      'status', 'invite_status').symbolize_keys
@@ -141,9 +143,13 @@ RSpec.describe 'Payroll import flow', type: :request do
   end
 
   def apply_sample_import
-    plan = Import::Planner.new.plan(parse_sample_import)
+    plan = Import::Planner.new(organization).plan(parse_sample_import)
 
     Import::Applier.new.apply(plan.approve!)
+  end
+
+  def organization
+    @organization ||= Organization.create!(name: 'Sunset Hotels')
   end
 
   # Database ids are generated, so members are compared on their natural key

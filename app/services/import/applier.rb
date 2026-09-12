@@ -9,9 +9,10 @@ module Import
       raise UnapprovedPlanError, 'plan must be approved before applying' unless plan.approved?
 
       ActiveRecord::Base.transaction do
+        organization_id = Organization.find(plan.organization_id).id
         entries = plan.actionable_entries
-        members = resolve_members(entries)
-        id_by_external_id = create_members(entries, members)
+        members = resolve_members(entries, organization_id)
+        id_by_external_id = create_members(entries, members, organization_id)
         update_members(entries, members)
         create_assignments(entries, id_by_external_id, members)
       end
@@ -20,42 +21,54 @@ module Import
 
     private
 
-    def resolve_members(entries)
+    def resolve_members(entries, organization_id)
       member_ids = entries.filter_map(&:matched_member_id).uniq
       return {} if member_ids.empty?
 
-      Member.where(id: member_ids).index_by(&:id)
+      members = Member.where(organization_id: organization_id, id: member_ids).index_by(&:id)
+      missing_ids = member_ids - members.keys
+      return members if missing_ids.empty?
+
+      raise ActiveRecord::RecordNotFound,
+            "members #{missing_ids.join(', ')} do not belong to organization #{organization_id}"
     end
 
     # Returns a map of external_id to id for every newly created member.
-    def create_members(entries, members)
+    def create_members(entries, members, organization_id)
       creates = entries.reject { |entry| members[entry.matched_member_id] }
-      existing_new_members = resolve_new_members(creates)
-      insert_new_members(new_entries(creates, existing_new_members)).merge(existing_new_members)
+      existing_new_members = resolve_new_members(creates, organization_id)
+      new_members = insert_new_members(new_entries(creates, existing_new_members), organization_id)
+      new_members.merge(existing_new_members)
     end
 
     def new_entries(entries, existing_members)
       entries.reject { |entry| existing_members.key?(entry.after[:external_id]) }
     end
 
-    def insert_new_members(entries)
+    def insert_new_members(entries, organization_id)
       group_by_attribute_keys(entries).each_with_object({}) do |group, id_by_external_id|
-        ids = insert_member_group(group)
+        ids = insert_member_group(group, organization_id)
         group.zip(ids).each { |entry, id| id_by_external_id[entry.after[:external_id]] = id }
       end
     end
 
-    def resolve_new_members(entries)
+    def resolve_new_members(entries, organization_id)
       external_ids = entries.filter_map { |entry| entry.after[:external_id] }.uniq
       return {} if external_ids.empty?
 
-      Member.where(external_id: external_ids).pluck(:external_id, :id).to_h
+      Member
+        .where(organization_id: organization_id, external_id: external_ids)
+        .pluck(:external_id, :id)
+        .to_h
     end
 
-    # Batched write skips validations by design: the Plan is validated upstream and
-    # Member has none. insert_all manages created_at/updated_at itself.
-    def insert_member_group(group)
-      Member.insert_all(group.map { |entry| member_attributes_for(entry) }).rows.flatten # rubocop:disable Rails/SkipsModelValidations
+    # Batched writes skip model validations; the approved Plan and organization
+    # lookup establish the required data first.
+    def insert_member_group(group, organization_id)
+      rows = group.map do |entry|
+        member_attributes_for(entry).merge(organization_id: organization_id)
+      end
+      Member.insert_all(rows).rows.flatten # rubocop:disable Rails/SkipsModelValidations
     end
 
     # Each distinct attribute set is one relation#update, which maintains updated_at.

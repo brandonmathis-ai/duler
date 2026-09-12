@@ -4,10 +4,11 @@ module Import
   # Categorizes every canonical row (and every roster member) into a Plan.
   # rubocop:disable Metrics/ClassLength
   class Planner
-    attr_reader :roster
+    attr_reader :organization, :roster
 
-    def initialize(roster = Member.all)
-      @roster = roster
+    def initialize(organization)
+      @organization = organization
+      @roster = organization.members
     end
 
     def plan(canonical_rows)
@@ -21,7 +22,7 @@ module Import
 
       records.concat(absence_entries_for(records))
 
-      Import::Plan.new(records: records)
+      Import::Plan.new(organization_id: organization.id, records: records)
     end
 
     private
@@ -140,7 +141,10 @@ module Import
     # unprocessable row). This is the inverse of what the plan already
     # applies, rather than a second, independent identity check.
     def absence_entries_for(records)
-      accounted_ids = Import::Plan.new(records: records).accounted_member_ids
+      accounted_ids = Import::Plan.new(
+        organization_id: organization.id,
+        records: records
+      ).accounted_member_ids
       absent_scope = @roster.where(status: 'active')
       absent_scope = absent_scope.where.not(id: accounted_ids) if accounted_ids.present?
 

@@ -45,9 +45,10 @@ module Import
       end
     end
 
-    attr_reader :records, :counts
+    attr_reader :organization_id, :records, :counts
 
-    def initialize(records: [], counts: {})
+    def initialize(organization_id:, records: [], counts: {})
+      @organization_id = organization_id
       @records = records
       @counts = counts.presence || records.map(&:category).tally
       @approved = false
