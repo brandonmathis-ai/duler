@@ -10,6 +10,7 @@ module Api
     rescue_from Encoding::InvalidByteSequenceError, Encoding::UndefinedConversionError, with: :render_malformed_csv
     rescue_from InvalidUploadError, with: :render_invalid_upload
     rescue_from MissingOrganizationError, with: :render_missing_organization
+    rescue_from JSON::ParserError, with: :render_invalid_resolutions_json
 
     def preview
       render json: ImportPlanSerializer.new(plan_for(uploaded_file), current_organization)
@@ -43,6 +44,8 @@ module Api
 
     def resolutions
       raw = params[:resolutions]
+      return {} if raw.blank?
+      return JSON.parse(raw) if raw.is_a?(String)
       return raw.to_unsafe_h if raw.respond_to?(:to_unsafe_h)
 
       raw
@@ -69,6 +72,10 @@ module Api
     def render_missing_organization
       render json: { error: 'no organization is configured; run bin/rails db:seed' },
              status: :unprocessable_content
+    end
+
+    def render_invalid_resolutions_json
+      render json: { error: 'resolutions must be valid JSON' }, status: :unprocessable_content
     end
   end
 end

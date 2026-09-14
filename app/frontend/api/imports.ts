@@ -9,9 +9,7 @@ async function requestImport(
   body.append('file', file)
 
   if (resolutions) {
-    for (const [key, memberId] of Object.entries(resolutions)) {
-      body.append(`resolutions[${key}]`, String(memberId))
-    }
+    body.append('resolutions', JSON.stringify(resolutions))
   }
 
   const response = await fetch(path, { method: 'POST', body })
