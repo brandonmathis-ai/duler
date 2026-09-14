@@ -2,6 +2,6 @@
 set -euo pipefail
 
 port="${PORT:-3000}"
-echo -e "\n\033[1mDuler is starting…\033[0m visit http://localhost:${port} once Rails and Vite are ready.\n"
+echo -e "\n\033[1mStarting…\033[0m visit http://localhost:${port} once Rails and Vite are ready.\n"
 
 exec bundle exec foreman start -f Procfile.dev -p "${port}" "$@"

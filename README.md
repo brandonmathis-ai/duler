@@ -16,11 +16,10 @@ This repository root is a Rails 8 app that serves both the API and the Vite + Re
 bundle install
 npm install
 bin/rails db:prepare
-bin/rails db:seed
 bin/dev
 ```
 
-Open the app shown by `bin/dev`, then upload [`sample-import.csv`](./sample-import.csv) to review the example payroll export. `db:seed` loads the Sunset Hotels sample roster needed to preview the sample import, including the deliberate Sam Rivera identity conflict.
+Open the app shown by `bin/dev`, then upload [`sample-import.csv`](./sample-import.csv) to review the example payroll export. `db:prepare` loads the Sunset Hotels sample roster needed to preview the sample import, including the deliberate Sam Rivera identity conflict. If you need to start over, run `bin/rails db:reset` by itself; Rails runs seeds during setup/reset, so do not run `db:seed` again afterward.
 
 ## Reconcile structure
 
