@@ -25,6 +25,18 @@ module Import
       Import::Plan.new(organization_id: organization.id, records: records)
     end
 
+    def resolved_entry_for(conflict_entry, member)
+      before = member_attributes_for(member)
+
+      Import::Plan::Entry.new(
+        category: category_for(before, conflict_entry.after),
+        match_key: conflict_entry.match_key,
+        matched_member_id: member_id_for(member),
+        candidate_member_ids: conflict_entry.candidate_member_ids,
+        **resolved_entry_attributes(conflict_entry, before)
+      )
+    end
+
     private
 
     def query_members_for(canonical_rows)
@@ -198,6 +210,15 @@ module Import
         status: member.status,
         invite_status: member.invite_status
       }.compact
+    end
+
+    def resolved_entry_attributes(conflict_entry, before)
+      {
+        before:,
+        after: conflict_entry.after,
+        source_rows: conflict_entry.source_rows,
+        reasons: conflict_entry.reasons
+      }
     end
 
     def status_for(row)

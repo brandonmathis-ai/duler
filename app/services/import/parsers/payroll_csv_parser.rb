@@ -23,7 +23,7 @@ module Import
         source_row = 1
 
         # Streams the CSV row-by-row
-        CSV.new(io, headers: true).each do |row|
+        CSV.new(io, headers: true, encoding: 'UTF-8').each do |row|
           source_row += 1
           next if blank_row?(row)
 
@@ -90,7 +90,7 @@ module Import
         raw = names.filter_map { |name| row[name] }.first
         return if raw.blank?
 
-        raw.strip.unicode_normalize.presence
+        raw.strip.encode(Encoding::UTF_8).unicode_normalize.presence
       end
     end
   end
