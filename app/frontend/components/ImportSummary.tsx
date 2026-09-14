@@ -4,7 +4,6 @@ const summaryItems: Array<[ImportCategory, string]> = [
   ['new_invite', 'New members'],
   ['new_with_account', 'New members with accounts'],
   ['update', 'Updates'],
-  ['reactivate', 'Reactivations'],
   ['offboard_terminated', 'Payroll offboards'],
   ['offboard_absent', 'Absent offboards'],
   ['unchanged', 'Unchanged'],

@@ -2,7 +2,6 @@ export type ImportCategory =
   | 'new_invite'
   | 'new_with_account'
   | 'update'
-  | 'reactivate'
   | 'offboard_terminated'
   | 'offboard_absent'
   | 'unchanged'

@@ -253,8 +253,7 @@ details.record-card[open] summary {
 
 .badge-new_invite,
 .badge-new_with_account,
-.badge-update,
-.badge-reactivate {
+.badge-update {
   color: #075b43;
   background: #d9f2e7;
 }

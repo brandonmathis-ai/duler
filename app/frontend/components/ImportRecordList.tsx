@@ -6,7 +6,6 @@ const categoryLabels: Record<ImportCategory, string> = {
   new_invite: 'New member',
   new_with_account: 'New member with account',
   update: 'Update',
-  reactivate: 'Reactivate',
   offboard_terminated: 'Offboard',
   offboard_absent: 'Offboard absent member',
   unchanged: 'Unchanged',
@@ -22,7 +21,6 @@ const riskOrder: Record<ImportCategory, number> = {
   new_invite: 3,
   new_with_account: 3,
   update: 3,
-  reactivate: 3,
   unchanged: 4,
 }
 

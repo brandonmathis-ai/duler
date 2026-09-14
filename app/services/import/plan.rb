@@ -31,11 +31,10 @@ module Import
         # update: Existing member with changed payroll attributes or assignments.
         # offboard_terminated: Existing member explicitly reported as terminated.
         # offboard_absent: Active member missing from the payroll snapshot.
-        # reactivate: Previously terminated member reported as active.
         # unchanged: Member already matches the payroll data.
         # conflict: Payroll identity matches multiple members and needs review.
         # unprocessable: Payroll record contains validation issues.
-        %i[new_invite new_with_account update offboard_terminated offboard_absent reactivate].include?(category)
+        %i[new_invite new_with_account update offboard_terminated offboard_absent].include?(category)
       end
 
       private

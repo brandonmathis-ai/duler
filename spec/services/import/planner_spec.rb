@@ -329,10 +329,10 @@ RSpec.describe Import::Planner do
     end
 
     context 'when terminated employee returns active' do
-      it 'plans reactivation of member' do
+      it 'plans an update with all file-owned changes' do
         member = create(:member, organization:, external_id: '1002', first_name: 'David',
                                  last_name: 'Okafor', status: 'terminated',
-                                 corporate_email: 'david.okafor@sunsethotels.com')
+                                 corporate_email: 'david@oldmail.com')
         csv = StringIO.new(david_active_csv)
 
         employees = Import::Parsers::PayrollCsvParser.new.parse(csv)
@@ -340,11 +340,18 @@ RSpec.describe Import::Planner do
         entry = entry_for(plan, external_id: '1002')
 
         expect(entry).to have_attributes(
-          category: :reactivate,
+          category: :update,
           matched_member_id: member.id
         )
         expect(entry.before).to include(status: 'terminated')
-        expect(entry.after).to include(status: 'active')
+        expect(entry.after).to include(
+          status: 'active',
+          corporate_email: 'david.okafor@sunsethotels.com'
+        )
+        expect(entry.attributes_to_apply).to eq(
+          corporate_email: 'david.okafor@sunsethotels.com',
+          status: 'active'
+        )
       end
     end
 

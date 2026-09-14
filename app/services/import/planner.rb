@@ -184,7 +184,6 @@ module Import
 
     def status_category_for(before, after)
       return :offboard_terminated if before[:status] == 'active' && after[:status] == 'terminated'
-      return :reactivate if before[:status] == 'terminated' && after[:status] == 'active'
 
       nil
     end
