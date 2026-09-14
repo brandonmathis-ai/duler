@@ -6,7 +6,10 @@ module Api
     class MissingOrganizationError < StandardError; end
 
     rescue_from CSV::MalformedCSVError, with: :render_malformed_csv
-    rescue_from Encoding::InvalidByteSequenceError, Encoding::UndefinedConversionError, with: :render_malformed_csv
+    rescue_from CSV::InvalidEncodingError,
+                Encoding::InvalidByteSequenceError,
+                Encoding::UndefinedConversionError,
+                with: :render_invalid_encoding
     rescue_from InvalidUploadError, with: :render_invalid_upload
     rescue_from MissingOrganizationError, with: :render_missing_organization
     rescue_from JSON::ParserError, with: :render_invalid_resolutions_json
@@ -58,6 +61,10 @@ module Api
 
     def render_malformed_csv
       render json: { error: 'file contains malformed CSV' }, status: :unprocessable_content
+    end
+
+    def render_invalid_encoding
+      render json: { error: 'file must contain valid UTF-8 text' }, status: :unprocessable_content
     end
 
     def render_invalid_upload(error)

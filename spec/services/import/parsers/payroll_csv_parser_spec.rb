@@ -39,6 +39,28 @@ RSpec.describe Import::Parsers::PayrollCsvParser do
       end
     end
 
+    context 'when uploaded CSV contains UTF-8' do
+      it 'preserves international names' do
+        row = '1008,DT,Active,07/01/2026,José,Muñoz,jose.munoz@example.com,,no,555-0108'
+        csv = StringIO.new(payroll_csv_for([row]).b)
+
+        employee = Import::Parsers::PayrollCsvParser.new.parse(csv).sole
+
+        expect(employee).to have_attributes(first_name: 'José', last_name: 'Muñoz')
+      end
+    end
+
+    context 'when uploaded CSV has invalid UTF-8' do
+      it 'raises an encoding error' do
+        row = "1008,DT,Active,07/01/2026,Jos\xFF,Munoz,jose.munoz@example.com,,no,555-0108".b
+        csv = StringIO.new(payroll_csv_for([row]).b)
+
+        expect do
+          Import::Parsers::PayrollCsvParser.new.parse(csv)
+        end.to raise_error(CSV::InvalidEncodingError)
+      end
+    end
+
     context 'when person has nonadjacent rows' do
       it 'groups positions and source rows' do
         csv = StringIO.new(six_row_payroll_csv)
