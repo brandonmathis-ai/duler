@@ -8,15 +8,10 @@ Rails.application.routes.draw do
   get 'up' => 'rails/health#show', as: :rails_health_check
 
   namespace :api do
-    get 'hello', to: 'hello#show'
     get 'roster', to: 'roster#index'
     post 'imports/preview', to: 'imports#preview'
     post 'imports/apply', to: 'imports#apply'
   end
-
-  get 'hello', to: 'api/hello#show', constraints: lambda { |request|
-    !request.format.html?
-  }
 
   # Defines the root path route ("/")
   root 'spa#index'
