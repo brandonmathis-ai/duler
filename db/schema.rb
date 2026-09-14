@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_12_181107) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_14_161200) do
   create_table "assignments", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "location_code"
@@ -57,7 +57,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_12_181107) do
     t.datetime "updated_at", null: false
     t.integer "user_id"
     t.index ["corporate_email"], name: "index_members_on_corporate_email"
-    t.index ["external_id"], name: "index_members_on_external_id"
+    t.index ["organization_id", "external_id"], name: "index_members_on_organization_id_and_external_id", unique: true, where: "external_id IS NOT NULL"
     t.index ["organization_id", "user_id"], name: "index_members_on_organization_id_and_user_id", unique: true, where: "user_id IS NOT NULL"
     t.index ["organization_id"], name: "index_members_on_organization_id"
     t.index ["user_id"], name: "index_members_on_user_id"

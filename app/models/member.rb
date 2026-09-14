@@ -7,5 +7,7 @@ class Member < ApplicationRecord
 
   enum :status, { active: 'active', terminated: 'terminated', inactive: 'inactive' }
 
+  validates :external_id, uniqueness: { scope: :organization_id }, allow_nil: true
+
   scope :eligible_for_modification, -> { where.not(status: 'inactive') }
 end
