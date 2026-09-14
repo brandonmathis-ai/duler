@@ -95,9 +95,10 @@ module Import
       Member.where(id: rejected_ids.uniq).update(status: 'inactive')
     end
 
-    # Adds every file-listed location the member doesn't already have, in one insert.
+    # Replaces locations with an empty file list and adds any newly listed locations.
     def create_assignments(entries, id_by_external_id, members)
       member_ids = member_ids_for(entries, id_by_external_id, members)
+      remove_assignments_for_empty_locations(entries, member_ids)
       taken = existing_assignment_pairs(member_ids.values)
       rows = entries.flat_map do |entry|
         new_assignment_rows(entry, member_ids[entry_key(entry)], taken)
@@ -116,6 +117,14 @@ module Import
 
     def entry_key(entry)
       entry.matched_member_id || entry.after[:external_id]
+    end
+
+    def remove_assignments_for_empty_locations(entries, member_ids)
+      ids = entries.filter_map do |entry|
+        member_id = member_ids[entry_key(entry)]
+        member_id if entry.after[:assignments] == []
+      end
+      Assignment.where(member_id: ids.uniq).delete_all if ids.any?
     end
 
     def new_assignment_rows(entry, member_id, taken)

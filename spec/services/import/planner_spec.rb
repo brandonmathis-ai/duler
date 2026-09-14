@@ -355,6 +355,27 @@ RSpec.describe Import::Planner do
       end
     end
 
+    context 'when payroll omits all assignment locations' do
+      it 'plans an empty assignment list' do
+        member = create(:member, organization:, external_id: '2001', first_name: 'John',
+                                 last_name: 'Smith', status: 'active',
+                                 corporate_email: 'john.smith@sunsethotels.com')
+        create(:assignment, member:, location_code: 'DT', role: 'member')
+        csv = StringIO.new(
+          payroll_csv_for(
+            ['2001,,Active,05/01/2026,John,Smith,john.smith@sunsethotels.com,john@example.com,no,555-0201']
+          )
+        )
+
+        employees = Import::Parsers::PayrollCsvParser.new.parse(csv)
+        plan = Import::Planner.new(organization).plan(employees)
+        entry = entry_for(plan, external_id: '2001')
+
+        expect(entry.category).to eq(:update)
+        expect(entry.after[:assignments]).to eq([])
+      end
+    end
+
     context 'when payroll adds a new assignment location' do
       it 'plans an update entry' do
         member = create(:member, organization:, external_id: '2001', first_name: 'John',

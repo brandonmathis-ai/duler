@@ -1,6 +1,6 @@
 import { ConflictResolution } from './ConflictResolution'
 import { ValueDiff } from './ValueDiff'
-import type { ImportCategory, ImportRecord } from '../types/imports'
+import type { Assignment, ImportCategory, ImportChange, ImportRecord } from '../types/imports'
 
 const categoryLabels: Record<ImportCategory, string> = {
   new_invite: 'New member',
@@ -35,6 +35,40 @@ function displayValue(value: unknown) {
   return value == null || value === '' ? 'Not set' : String(value)
 }
 
+function isAssignment(value: unknown): value is Assignment {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'location_code' in value &&
+    'role' in value &&
+    typeof value.location_code === 'string' &&
+    typeof value.role === 'string'
+  )
+}
+
+function locationCodes(value: unknown) {
+  if (!Array.isArray(value)) return []
+
+  return [...new Set(value.filter(isAssignment).map((assignment) => assignment.location_code))].sort()
+}
+
+function assignmentChange(record: ImportRecord): ImportChange | undefined {
+  const before = locationCodes(record.before.assignments)
+  const after = locationCodes(record.after.assignments)
+  if (before.join(',') === after.join(',')) return
+
+  return {
+    field: 'locations',
+    before: before.join(', ') || 'None',
+    after: after.join(', ') || 'None',
+  }
+}
+
+function recordChanges(record: ImportRecord) {
+  const locations = assignmentChange(record)
+  return locations ? [...record.changes, locations] : record.changes
+}
+
 function recordName(record: ImportRecord) {
   return [record.after.first_name, record.after.last_name].filter(Boolean).join(' ') || record.key
 }
@@ -58,15 +92,17 @@ function RecordHeader({ record }: Pick<RecordDetailsProps, 'record'>) {
 }
 
 function RecordDetails({ record, selections, onSelect }: RecordDetailsProps) {
+  const changes = recordChanges(record)
+
   return (
     <>
       <p className="record-meta">
         Source rows: {record.source_rows.join(', ') || 'Not in upload'}
         {record.reasons.length > 0 && ` | ${record.reasons.join(', ')}`}
       </p>
-      {record.category !== 'unchanged' && record.changes.length > 0 && (
+      {record.category !== 'unchanged' && changes.length > 0 && (
         <dl className="change-list">
-          {record.changes.map((change) => (
+          {changes.map((change) => (
             <div key={change.field}>
               <dt>{change.field.replaceAll('_', ' ')}</dt>
               <dd>

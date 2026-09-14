@@ -205,7 +205,9 @@ module Import
     end
 
     def assignments_for(row)
-      active_positions_for(row).map do |position|
+      active_positions_for(row).filter_map do |position|
+        next if position.location_code.blank?
+
         { location_code: position.location_code, role: 'member' }
       end
     end

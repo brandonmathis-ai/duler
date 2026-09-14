@@ -75,6 +75,28 @@ RSpec.describe Import::Applier do
         expect(assignment).to have_attributes(location_code: 'DT', role: 'admin')
       end
 
+      it 'removes locations from an empty file' do
+        roster = seed_roster
+        member = roster[:david]
+        create(:assignment, member:, location_code: 'DT', role: 'member')
+        plan = Import::Plan.new(
+          organization_id: roster.fetch(:organization).id,
+          records: [
+            Import::Plan::Entry.new(
+              category: :offboard_terminated,
+              match_key: 'external_id:1002',
+              matched_member_id: member.id,
+              before: { status: 'active', assignments: [{ location_code: 'DT', role: 'member' }] },
+              after: { status: 'terminated', assignments: [] }
+            )
+          ]
+        ).approve!
+
+        Import::Applier.new.apply(plan)
+
+        expect(member.assignments.reload).to be_empty
+      end
+
       it 'creates assignments not yet stored' do
         roster = seed_roster
 
