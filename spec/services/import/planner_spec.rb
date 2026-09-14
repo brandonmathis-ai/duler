@@ -153,9 +153,10 @@ RSpec.describe Import::Planner do
 
     context 'when payroll details already match the roster' do
       it 'plans an unchanged entry' do
-        create(:member, organization:, external_id: '2001', first_name: 'John',
-                        last_name: 'Smith', status: 'active',
-                        corporate_email: 'john.smith@sunsethotels.com')
+        member = create(:member, organization:, external_id: '2001', first_name: 'John',
+                                 last_name: 'Smith', status: 'active',
+                                 corporate_email: 'john.smith@sunsethotels.com')
+        create(:assignment, member: member, location_code: 'DT', role: 'member')
         csv = StringIO.new(john_unchanged_csv)
 
         employees = Import::Parsers::PayrollCsvParser.new.parse(csv)
@@ -187,6 +188,7 @@ RSpec.describe Import::Planner do
         create(:assignment, member: robert, location_code: 'DT', role: 'admin')
         create(:assignment, member: maria, location_code: 'DT', role: 'member')
         create(:assignment, member: maria, location_code: 'UP', role: 'member')
+        create(:assignment, member: john, location_code: 'DT', role: 'member')
         roster = [robert, maria, david, nina, john]
         csv = StringIO.new(six_row_payroll_csv)
 
@@ -346,21 +348,35 @@ RSpec.describe Import::Planner do
       end
     end
 
-    context 'when payroll location differs from Duler assignment' do
-      it 'updates only payroll fields' do
-        member = create(:member, organization:, external_id: '1003', first_name: 'Robert',
-                                 last_name: 'Chen', status: 'active',
-                                 corporate_email: 'robert.c@oldmail.com')
+    context 'when payroll adds a new assignment location' do
+      it 'plans an update entry' do
+        member = create(:member, organization:, external_id: '2001', first_name: 'John',
+                                 last_name: 'Smith', status: 'active',
+                                 corporate_email: 'john.smith@sunsethotels.com')
         create(:assignment, member: member, location_code: 'DT', role: 'admin')
-        csv = StringIO.new(robert_new_email_uptown_csv)
+        csv = StringIO.new(john_new_location_csv)
 
         employees = Import::Parsers::PayrollCsvParser.new.parse(csv)
         plan = Import::Planner.new(organization).plan(employees)
 
-        expect(entry_for(plan, external_id: '1003').attributes_to_apply).to eq(
-          corporate_email: 'robert.chen@sunsethotels.com'
-        )
-        expect(plan.assignment_actions).to be_empty
+        expect(entry_for(plan, external_id: '2001').category).to eq(:update)
+        expect(entry_for(plan, external_id: '2001').attributes_to_apply).to eq({})
+      end
+    end
+
+    context 'when payroll locations already match the roster' do
+      it 'plans an unchanged entry even with a different Duler role' do
+        member = create(:member, organization:, external_id: '2001', first_name: 'John',
+                                 last_name: 'Smith', status: 'active',
+                                 corporate_email: 'john.smith@sunsethotels.com')
+        create(:assignment, member: member, location_code: 'DT', role: 'admin')
+        csv = StringIO.new(john_unchanged_csv)
+
+        employees = Import::Parsers::PayrollCsvParser.new.parse(csv)
+        plan = Import::Planner.new(organization).plan(employees)
+
+        expect(entry_for(plan, external_id: '2001').category).to eq(:unchanged)
+        expect(entry_for(plan, external_id: '2001').attributes_to_apply).to be_empty
       end
     end
 
@@ -428,9 +444,12 @@ RSpec.describe Import::Planner do
     )
   end
 
-  def robert_new_email_uptown_csv
+  def john_new_location_csv
     payroll_csv_for(
-      ['1003,UP,Active,02/01/2026,Robert,Chen,robert.chen@sunsethotels.com,robert.chen@example.com,no,555-0103']
+      [
+        '2001,DT,Active,05/01/2026,John,Smith,john.smith@sunsethotels.com,john@example.com,no,555-0201',
+        '2001,UP,Active,05/01/2026,John,Smith,john.smith@sunsethotels.com,john@example.com,no,555-0202'
+      ]
     )
   end
 

@@ -172,13 +172,26 @@ module Import
     end
 
     def category_for(before, after)
-      return :offboard_terminated if before[:status] == 'active' && after[:status] == 'terminated'
-      return :reactivate if before[:status] == 'terminated' && after[:status] == 'active'
+      status_category = status_category_for(before, after)
+      return status_category if status_category
 
       import_owned_attributes = %i[external_id first_name last_name corporate_email status]
       return :update if before.slice(*import_owned_attributes) != after.slice(*import_owned_attributes)
+      return :update if assignment_changed?(before, after)
 
       :unchanged
+    end
+
+    def status_category_for(before, after)
+      return :offboard_terminated if before[:status] == 'active' && after[:status] == 'terminated'
+      return :reactivate if before[:status] == 'terminated' && after[:status] == 'active'
+
+      nil
+    end
+
+    def assignment_changed?(before, after)
+      before[:assignments].pluck(:location_code).uniq.sort !=
+        after[:assignments].pluck(:location_code).uniq.sort
     end
 
     def incoming_attributes_for(row)
@@ -205,8 +218,15 @@ module Import
         last_name: member.last_name,
         corporate_email: member.corporate_email,
         status: member.status,
-        invite_status: member.invite_status
+        invite_status: member.invite_status,
+        assignments: member_assignment_attributes_for(member)
       }.compact
+    end
+
+    def member_assignment_attributes_for(member)
+      member.assignments.order(:location_code).map do |assignment|
+        { location_code: assignment.location_code, role: assignment.role }
+      end
     end
 
     def resolved_entry_attributes(conflict_entry, before)
