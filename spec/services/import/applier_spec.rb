@@ -103,6 +103,30 @@ RSpec.describe Import::Applier do
         expect(priya).to have_attributes(first_name: 'Priya', external_id: '1099')
       end
 
+      it 'deactivates the rejected candidate of a resolved conflict' do
+        roster = seed_roster
+        plan = Import::Plan.new(
+          organization_id: roster.fetch(:organization).id,
+          records: [resolved_conflict_entry(roster[:frank], roster[:priya])]
+        ).approve!
+
+        Import::Applier.new.apply(plan)
+
+        expect(roster[:priya].reload.status).to eq('inactive')
+      end
+
+      it 'does not deactivate the winning candidate of a resolved conflict' do
+        roster = seed_roster
+        plan = Import::Plan.new(
+          organization_id: roster.fetch(:organization).id,
+          records: [resolved_conflict_entry(roster[:frank], roster[:priya])]
+        ).approve!
+
+        Import::Applier.new.apply(plan)
+
+        expect(roster[:frank].reload.status).to eq('active')
+      end
+
       it 'adds only the two new members' do
         roster = seed_roster
         plan = update_plan(roster)
@@ -245,6 +269,21 @@ RSpec.describe Import::Applier do
       before: { status: 'active' },
       after: { status: 'terminated' },
       reasons: [:absent_from_snapshot]
+    )
+  end
+
+  def resolved_conflict_entry(frank, priya)
+    Import::Plan::Entry.new(
+      category: :update,
+      match_key: 'external_id:1007',
+      matched_member_id: frank.id,
+      candidate_member_ids: [frank.id, priya.id],
+      before: { first_name: 'Frank' },
+      after: {
+        external_id: '1007', first_name: 'Frank', last_name: 'Wright',
+        corporate_email: 'frank.w@oldmail.com', status: 'active'
+      },
+      reasons: [:identity_conflict]
     )
   end
 

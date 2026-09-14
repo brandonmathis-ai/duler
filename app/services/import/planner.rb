@@ -8,7 +8,7 @@ module Import
 
     def initialize(organization)
       @organization = organization
-      @roster = organization.members
+      @roster = organization.members.eligible_for_modification
     end
 
     def plan(canonical_rows)
@@ -40,17 +40,14 @@ module Import
     private
 
     def query_members_for(canonical_rows)
-      scopes = candidate_scopes_for(canonical_rows)
-      return [] if scopes.empty?
-
-      scopes.reduce(:or).to_a
-    end
-
-    def candidate_scopes_for(canonical_rows)
-      [
+      scopes = [
         scope_for_external_ids(canonical_rows),
         scope_for_emails(canonical_rows)
       ].compact
+
+      return [] if scopes.empty?
+
+      scopes.reduce(:or).to_a
     end
 
     def scope_for_external_ids(canonical_rows)

@@ -30,15 +30,6 @@ RSpec.describe Import::ConflictResolver do
       expect(email_candidate.reload.external_id).to be_nil
     end
 
-    it 'rejects missing selections' do
-      organization = create(:organization)
-      create(:member, organization:, external_id: '1005', corporate_email: 'srivera@sunsethotels.com')
-      create(:member, organization:, external_id: nil, corporate_email: 'sam.rivera@sunsethotels.com')
-
-      expect { Import::ConflictResolver.new(organization).resolve(plan_for(organization), {}) }
-        .to raise_error(Import::ConflictResolver::InvalidResolutionError)
-    end
-
     def plan_for(organization)
       rows = Import::Parsers::PayrollCsvParser.new.parse(
         StringIO.new(

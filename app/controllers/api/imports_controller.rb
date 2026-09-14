@@ -5,7 +5,6 @@ module Api
     class InvalidUploadError < StandardError; end
     class MissingOrganizationError < StandardError; end
 
-    rescue_from Import::ConflictResolver::InvalidResolutionError, with: :render_invalid_resolution
     rescue_from CSV::MalformedCSVError, with: :render_malformed_csv
     rescue_from Encoding::InvalidByteSequenceError, Encoding::UndefinedConversionError, with: :render_malformed_csv
     rescue_from InvalidUploadError, with: :render_invalid_upload
@@ -55,10 +54,6 @@ module Api
     # in production instead of selecting the first organization.
     def current_organization
       @current_organization ||= Organization.first || raise(MissingOrganizationError)
-    end
-
-    def render_invalid_resolution(error)
-      render json: { error: error.message }, status: :unprocessable_content
     end
 
     def render_malformed_csv

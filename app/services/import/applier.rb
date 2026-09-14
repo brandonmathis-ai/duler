@@ -2,30 +2,34 @@
 
 module Import
   # Applies an approved Plan to the database. Thin and idempotent.
+  # rubocop:disable-next Metrics/ClassLength
   class Applier
     class UnapprovedPlanError < StandardError; end
 
     def apply(plan)
       raise UnapprovedPlanError, 'plan must be approved before applying' unless plan.approved?
 
-      ActiveRecord::Base.transaction do
-        organization_id = Organization.find(plan.organization_id).id
-        entries = plan.actionable_entries
-        members = resolve_members(entries, organization_id)
-        id_by_external_id = create_members(entries, members, organization_id)
-        update_members(entries, members)
-        create_assignments(entries, id_by_external_id, members)
-      end
+      ActiveRecord::Base.transaction { apply_actionable_entries(plan) }
       plan
     end
 
     private
 
+    def apply_actionable_entries(plan)
+      organization_id = Organization.find(plan.organization_id).id
+      entries = plan.actionable_entries
+      members = resolve_members(entries, organization_id)
+      id_by_external_id = create_members(entries, members, organization_id)
+      update_members(entries, members)
+      deactivate_rejected_candidates(entries)
+      create_assignments(entries, id_by_external_id, members)
+    end
+
     def resolve_members(entries, organization_id)
       member_ids = entries.filter_map(&:matched_member_id).uniq
       return {} if member_ids.empty?
 
-      members = Member.where(organization_id: organization_id, id: member_ids).index_by(&:id)
+      members = Member.eligible_for_modification.where(organization_id: organization_id, id: member_ids).index_by(&:id)
       missing_ids = member_ids - members.keys
       return members if missing_ids.empty?
 
@@ -57,6 +61,7 @@ module Import
       return {} if external_ids.empty?
 
       Member
+        .eligible_for_modification
         .where(organization_id: organization_id, external_id: external_ids)
         .pluck(:external_id, :id)
         .to_h
@@ -82,6 +87,12 @@ module Import
       pairs.group_by(&:last).each do |attributes, group|
         Member.where(id: group.map { |member, _| member.id }).update(attributes)
       end
+    end
+
+    # Rejected conflict candidates are never matched or updated, so mark them inactive.
+    def deactivate_rejected_candidates(entries)
+      rejected_ids = entries.flat_map { |entry| entry.candidate_member_ids - [entry.matched_member_id] }
+      Member.where(id: rejected_ids.uniq).update(status: 'inactive')
     end
 
     # Adds every file-listed location the member doesn't already have, in one insert.

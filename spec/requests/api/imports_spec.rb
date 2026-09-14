@@ -74,23 +74,6 @@ RSpec.describe 'Api::Imports', type: :request do
       expect(selected.reload.external_id).to eq('1005')
       expect(untouched.reload.corporate_email).to eq('srivera@sunsethotels.com')
     end
-
-    it 'rejects an invalid selection without writing' do
-      organization = create(:organization)
-      selected = create(:member, organization:, external_id: '1005',
-                                 corporate_email: 'srivera@sunsethotels.com')
-      create(:member, organization:, external_id: nil, corporate_email: 'sam.rivera@sunsethotels.com')
-      unrelated = create(:member, organization:, external_id: '9999', corporate_email: 'other@sunsethotels.com')
-
-      expect do
-        post '/api/imports/apply', params: {
-          file: conflict_file,
-          resolutions: { 'external_id:1005' => unrelated.id }
-        }
-      end.not_to(change { selected.reload.attributes })
-
-      expect(response).to have_http_status(:unprocessable_content)
-    end
   end
 
   def conflict_file

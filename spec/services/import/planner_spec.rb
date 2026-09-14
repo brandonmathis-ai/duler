@@ -17,7 +17,7 @@ RSpec.describe Import::Planner do
 
         expect(planner.roster).to be_a(ActiveRecord::Relation)
         expect(planner.roster.klass).to eq(Member)
-        expect(planner.roster.loaded?).to be(false)
+        expect(planner.roster).not_to be_loaded
       end
     end
   end
