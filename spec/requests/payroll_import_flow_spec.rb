@@ -12,6 +12,7 @@ RSpec.describe 'Payroll import flow', type: :request do
     seed_roster_from_fixture
 
     plan = Import::Planner.new(organization).plan(parse_sample_import)
+    binding.pry
     categories = plan.records.to_h { |record| [record.match_key, record.category] }
 
     expect(categories).to eq(
@@ -117,7 +118,7 @@ RSpec.describe 'Payroll import flow', type: :request do
 
   def expected_changed_entries # rubocop:disable Metrics/MethodLength
     [
-      # 1002 reported Terminated by payroll; kept for history.
+      # 1002 reported Terminated by payroll; location kept since it's still reported in csv.
       roster_entry(external_id: '1002', first_name: 'David', last_name: 'Okafor',
                    corporate_email: 'david.okafor@sunsethotels.com', status: 'terminated',
                    personal_email: 'd.okafor@gmail.com', locations: %w[DT]),
