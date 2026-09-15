@@ -344,6 +344,24 @@ RSpec.describe Import::Planner do
       end
     end
 
+    context 'when payroll drops an assignment location' do
+      it 'plans only the imported locations' do
+        member = create(:member, organization:, external_id: '2001', first_name: 'John',
+                                 last_name: 'Smith', status: 'active',
+                                 corporate_email: 'john.smith@sunsethotels.com')
+        create(:assignment, member: member, location_code: 'DT', role: 'member')
+        create(:assignment, member: member, location_code: 'UP', role: 'admin')
+        csv = StringIO.new(john_unchanged_csv)
+
+        employees = Import::Parsers::PayrollCsvParser.new.parse(csv)
+        plan = Import::Planner.new(organization).plan(employees)
+        entry = entry_for(plan, external_id: '2001')
+
+        expect(entry.category).to eq(:update)
+        expect(entry.after[:assignments]).to eq([{ location_code: 'DT', role: 'member' }])
+      end
+    end
+
     context 'when payroll locations already match the roster' do
       it 'plans an unchanged entry even with a different Duler role' do
         member = create(:member, organization:, external_id: '2001', first_name: 'John',

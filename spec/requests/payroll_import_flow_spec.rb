@@ -12,7 +12,6 @@ RSpec.describe 'Payroll import flow', type: :request do
     seed_roster_from_fixture
 
     plan = Import::Planner.new(organization).plan(parse_sample_import)
-    binding.pry
     categories = plan.records.to_h { |record| [record.match_key, record.category] }
 
     expect(categories).to eq(
@@ -84,9 +83,15 @@ RSpec.describe 'Payroll import flow', type: :request do
   end
 
   def apply_sample_import
-    plan = Import::Planner.new(organization).plan(parse_sample_import)
+    Import::Applier.new.apply(resolved_sample_import_plan.approve!)
+  end
 
-    Import::Applier.new.apply(plan.approve!)
+  def resolved_sample_import_plan
+    plan = Import::Planner.new(organization).plan(parse_sample_import)
+    selected = organization.members.find_by!(corporate_email: 'sam.rivera@sunsethotels.com')
+    resolutions = { 'external_id:1005' => selected.id }
+
+    Import::ConflictResolver.new(organization).resolve(plan, resolutions)
   end
 
   def organization
@@ -104,7 +109,7 @@ RSpec.describe 'Payroll import flow', type: :request do
 
   # Members the import did not touch at all.
   def untouched_membership_ids
-    %w[mbr_5041 mbr_5042 mbr_3007 mbr_2001 mbr_2002 mbr_2003 mbr_2004 mbr_2005 mbr_2006]
+    %w[mbr_3007 mbr_2001 mbr_2002 mbr_2003 mbr_2004 mbr_2005 mbr_2006]
   end
 
   def expected_roster_after
@@ -130,6 +135,14 @@ RSpec.describe 'Payroll import flow', type: :request do
       roster_entry(external_id: '1006', first_name: 'Nina', last_name: 'Patel',
                    corporate_email: 'nina.patel@sunsethotels.com', status: 'terminated',
                    personal_email: 'nina.p@gmail.com', locations: %w[DT]),
+      # Sam's accepted membership wins the conflict and takes the file's exact location set.
+      roster_entry(external_id: '1005', first_name: 'Sam', last_name: 'Rivera',
+                   corporate_email: 'sam.rivera@sunsethotels.com', status: 'active',
+                   personal_email: 'sam.rivera@gmail.com', locations: %w[DT]),
+      # The rejected duplicate is retained for history but no longer owns the payroll identity.
+      roster_entry(external_id: nil, first_name: 'Sam', last_name: 'Rivera',
+                   corporate_email: 'srivera@sunsethotels.com', status: 'inactive',
+                   invite_status: 'pending', locations: %w[DT]),
       # New hires: no login account yet, so each is invited.
       roster_entry(external_id: '1001', first_name: 'Maria', last_name: 'Gomez',
                    corporate_email: 'maria.gomez@sunsethotels.com', status: 'active',

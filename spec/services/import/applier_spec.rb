@@ -106,6 +106,16 @@ RSpec.describe Import::Applier do
         expect(assignment_state(roster[:maria])).to contain_exactly(%w[DT member], %w[UP member])
       end
 
+      it 'removes locations missing from the file' do
+        roster = seed_roster
+        create(:assignment, member: roster[:maria], location_code: 'DT', role: 'admin')
+        create(:assignment, member: roster[:maria], location_code: 'CP', role: 'member')
+
+        Import::Applier.new.apply(update_plan(roster))
+
+        expect(assignment_state(roster[:maria])).to contain_exactly(%w[DT admin], %w[UP member])
+      end
+
       it 'skips unresolved identity conflicts' do
         roster = seed_roster
 

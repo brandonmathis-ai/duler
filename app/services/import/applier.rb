@@ -20,9 +20,9 @@ module Import
       entries = plan.actionable_entries
       members = resolve_members(entries, organization_id)
       id_by_external_id = create_members(entries, members, organization_id)
-      update_members(entries, members)
       deactivate_rejected_candidates(entries)
-      create_assignments(entries, id_by_external_id, members)
+      update_members(entries, members)
+      reconcile_assignments(entries, id_by_external_id, members)
     end
 
     def resolve_members(entries, organization_id)
@@ -89,16 +89,16 @@ module Import
       end
     end
 
-    # Rejected conflict candidates are never matched or updated, so mark them inactive.
+    # Release rejected identities before assigning them to the selected candidate.
     def deactivate_rejected_candidates(entries)
       rejected_ids = entries.flat_map { |entry| entry.candidate_member_ids - [entry.matched_member_id] }
-      Member.where(id: rejected_ids.uniq).update(status: 'inactive')
+      Member.where(id: rejected_ids.uniq).update(status: 'inactive', external_id: nil)
     end
 
-    # Replaces locations with an empty file list and adds any newly listed locations.
-    def create_assignments(entries, id_by_external_id, members)
+    # Replaces file-owned locations while preserving roles on retained assignments.
+    def reconcile_assignments(entries, id_by_external_id, members)
       member_ids = member_ids_for(entries, id_by_external_id, members)
-      remove_assignments_for_empty_locations(entries, member_ids)
+      remove_stale_assignments(entries, member_ids)
       taken = existing_assignment_pairs(member_ids.values)
       rows = entries.flat_map do |entry|
         new_assignment_rows(entry, member_ids[entry_key(entry)], taken)
@@ -119,12 +119,29 @@ module Import
       entry.matched_member_id || entry.after[:external_id]
     end
 
-    def remove_assignments_for_empty_locations(entries, member_ids)
-      ids = entries.filter_map do |entry|
-        member_id = member_ids[entry_key(entry)]
-        member_id if entry.after[:assignments] == []
+    def remove_stale_assignments(entries, member_ids)
+      assignment_targets(entries, member_ids).each do |member_id, locations|
+        remove_assignments_except(member_id, locations)
       end
-      Assignment.where(member_id: ids.uniq).delete_all if ids.any?
+    end
+
+    def assignment_targets(entries, member_ids)
+      entries.filter_map do |entry|
+        next unless entry.after.key?(:assignments)
+
+        member_id = member_ids[entry_key(entry)]
+        [member_id, assignment_locations(entry)] if member_id
+      end
+    end
+
+    def assignment_locations(entry)
+      Array(entry.after[:assignments]).filter_map { |assignment| assignment[:location_code].presence }
+    end
+
+    def remove_assignments_except(member_id, locations)
+      assignments = Assignment.where(member_id:)
+      assignments = assignments.where.not(location_code: locations) if locations.any?
+      assignments.delete_all
     end
 
     def new_assignment_rows(entry, member_id, taken)

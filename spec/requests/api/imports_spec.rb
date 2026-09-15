@@ -90,7 +90,11 @@ RSpec.describe 'Api::Imports', type: :request do
 
       expect(response).to have_http_status(:ok)
       expect(selected.reload.external_id).to eq('1005')
-      expect(untouched.reload.corporate_email).to eq('srivera@sunsethotels.com')
+      expect(untouched.reload).to have_attributes(
+        external_id: nil,
+        corporate_email: 'srivera@sunsethotels.com',
+        status: 'inactive'
+      )
     end
   end
 
