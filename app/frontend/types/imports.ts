@@ -31,11 +31,22 @@ export interface ImportChange {
   after: unknown
 }
 
+export interface MemberAttributes {
+  external_id?: string | null
+  first_name?: string | null
+  last_name?: string | null
+  corporate_email?: string | null
+  status?: string | null
+  invite_status?: string | null
+  assignments?: Assignment[]
+  [key: string]: unknown
+}
+
 export interface ImportRecord {
   key: string
   category: ImportCategory
-  before: Record<string, unknown>
-  after: Record<string, unknown>
+  before: MemberAttributes
+  after: MemberAttributes
   changes: ImportChange[]
   source_rows: number[]
   reasons: string[]
