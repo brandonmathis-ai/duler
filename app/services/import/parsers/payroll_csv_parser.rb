@@ -7,15 +7,16 @@ module Import
     :last_name,
     :work_email,
     :positions,
-    :source_rows,
-    :issues
+    :source_rows
   )
 
-  IncomingPosition = Data.define(:location_code, :status, :source_row, :issues)
+  IncomingPosition = Data.define(:location_code, :status, :source_row)
 
   module Parsers
     # Maps the payroll provider's CSV columns to canonical rows.
     class PayrollCsvParser
+      class ParseError < StandardError; end
+
       VALID_POSITION_STATUSES = %w[active terminated].freeze
 
       def parse(io)
@@ -27,16 +28,23 @@ module Import
           source_row += 1
           next if blank_row?(row)
 
-          external_id = field(row, 'external_id')
-          # Keep rows without an external ID separate so invalid records are not merged.
-          key = external_id.presence || "source_row:#{source_row}"
-          grouped_rows[key] << [row, source_row]
+          validate_row!(row, source_row)
+          grouped_rows[field(row, 'external_id')] << [row, source_row]
         end
 
         grouped_rows.values.map { |rows| incoming_employee_for(rows) }
       end
 
       private
+
+      def validate_row!(row, source_row)
+        raise ParseError, "missing external_id on row #{source_row}" if field(row, 'external_id').blank?
+
+        status = field(row, 'position_status').to_s.downcase
+        return if VALID_POSITION_STATUSES.include?(status)
+
+        raise ParseError, "invalid position_status '#{status}' on row #{source_row}"
+      end
 
       def utf8_io(io)
         io.set_encoding(Encoding::UTF_8)
@@ -52,13 +60,11 @@ module Import
       def incoming_employee_for(rows)
         first_row, = rows.first
         positions = rows.map { |row, source_row| incoming_position_for(row, source_row) }
-        issues = validate_employee_data(first_row, positions)
 
         Import::IncomingEmployee.new(
           **person_attributes_for(first_row),
           positions: positions,
-          source_rows: rows.map(&:second),
-          issues: issues
+          source_rows: rows.map(&:second)
         )
       end
 
@@ -77,18 +83,8 @@ module Import
         Import::IncomingPosition.new(
           location_code: field(row, 'location_code')&.upcase,
           status: status,
-          source_row: source_row,
-          issues: []
+          source_row: source_row
         )
-      end
-
-      def validate_employee_data(row, positions)
-        issues = positions.flat_map(&:issues)
-        if positions.any? { |position| VALID_POSITION_STATUSES.exclude?(position.status) }
-          issues << :invalid_position_status
-        end
-        issues << :missing_external_id if field(row, 'external_id').blank?
-        issues.uniq
       end
 
       def field(row, *names)

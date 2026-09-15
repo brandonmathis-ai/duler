@@ -67,43 +67,16 @@ module Import
       User.where(login_email: emails).index_by(&:login_email)
     end
 
-    # Builds a plan entry by first rejecting invalid rows, then converting the
-    # matcher's conflict, new-member, or existing-member result into a record.
+    # Builds a plan entry by converting the matcher's conflict,
+    # new-member, or existing-member result into a record.
     def build_entry_for(row, matcher, users_by_email)
       match = matcher.match(row)
-      return unprocessable_entry_for(row, match) if row.issues.present?
       return conflict_entry_for(row, match.fetch(:candidates)) if match.fetch(:category) == :conflict
 
       member = match.fetch(:member)
       return new_entry_for(row, users_by_email) if member.nil?
 
       matched_entry_for(row, member)
-    end
-
-    # A row with issues is never applied, but we still attempt a best-effort
-    # match so the referenced member (if any) is held out of the absence scan
-    # below instead of being wrongly flagged as offboard_absent.
-    def unprocessable_entry_for(row, match)
-      Import::Plan::Entry.new(
-        category: :unprocessable,
-        match_key: match_key_for(row),
-        matched_member_id: unprocessable_matched_id_for(match),
-        candidate_member_ids: unprocessable_candidate_ids_for(match),
-        after: incoming_attributes_for(row),
-        source_rows: row.source_rows,
-        reasons: row.issues
-      )
-    end
-
-    def unprocessable_matched_id_for(match)
-      member = match.fetch(:member)
-      member && member_id_for(member)
-    end
-
-    def unprocessable_candidate_ids_for(match)
-      return [] unless match.fetch(:category) == :conflict
-
-      match.fetch(:candidates).map { |member| member_id_for(member) }
     end
 
     def conflict_entry_for(row, candidates)

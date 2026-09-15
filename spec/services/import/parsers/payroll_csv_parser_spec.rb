@@ -131,6 +131,28 @@ RSpec.describe Import::Parsers::PayrollCsvParser do
         expect(employees.sole.external_id).to eq('1007')
       end
     end
+
+    context 'when row is missing external id' do
+      it 'raises a parse error' do
+        row = ',DT,Active,07/01/2026,Priya,Nair,priya.nair@sunsethotels.com,,no,555-0107'
+        csv = StringIO.new(payroll_csv_for([row]))
+
+        expect do
+          Import::Parsers::PayrollCsvParser.new.parse(csv)
+        end.to raise_error(Import::Parsers::PayrollCsvParser::ParseError, /missing external_id/)
+      end
+    end
+
+    context 'when row has invalid position status' do
+      it 'raises a parse error' do
+        row = '1007,DT,Suspended,07/01/2026,Priya,Nair,priya.nair@sunsethotels.com,,no,555-0107'
+        csv = StringIO.new(payroll_csv_for([row]))
+
+        expect do
+          Import::Parsers::PayrollCsvParser.new.parse(csv)
+        end.to raise_error(Import::Parsers::PayrollCsvParser::ParseError, /invalid position_status/)
+      end
+    end
   end
 
   def six_row_payroll_csv

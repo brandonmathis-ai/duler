@@ -295,39 +295,6 @@ RSpec.describe Import::Planner do
       end
     end
 
-    context 'when a row cannot be processed' do
-      it 'marks row as unprocessable' do
-        csv = StringIO.new(csv_with_invalid_status)
-
-        employees = Import::Parsers::PayrollCsvParser.new.parse(csv)
-        plan = Import::Planner.new(organization).plan(employees)
-
-        expect(plan.records).to contain_exactly(
-          have_attributes(
-            category: :unprocessable,
-            source_rows: [2],
-            reasons: include(:invalid_position_status)
-          )
-        )
-      end
-    end
-
-    context 'when an unprocessable row matches an active member' do
-      it 'does not also flag that member as absent' do
-        member = create(:member, organization:, external_id: '1007', first_name: 'Priya',
-                                 last_name: 'Nair', status: 'active',
-                                 corporate_email: 'priya.nair@sunsethotels.com')
-        csv = StringIO.new(csv_with_invalid_status)
-
-        employees = Import::Parsers::PayrollCsvParser.new.parse(csv)
-        plan = Import::Planner.new(organization).plan(employees)
-
-        expect(plan.records).to contain_exactly(
-          have_attributes(category: :unprocessable, matched_member_id: member.id)
-        )
-      end
-    end
-
     context 'when terminated employee returns active' do
       it 'plans an update with all file-owned changes' do
         member = create(:member, organization:, external_id: '1002', first_name: 'David',
@@ -505,12 +472,6 @@ RSpec.describe Import::Planner do
   def sam_csv
     payroll_csv_for(
       ['1005,DT,Active,02/01/2026,Sam,Rivera,sam.rivera@sunsethotels.com,sam@example.com,no,555-0105']
-    )
-  end
-
-  def csv_with_invalid_status
-    payroll_csv_for(
-      ['1007,DT,Suspended,02/01/2026,Priya,Nair,priya.nair@sunsethotels.com,priya@example.com,no,555-0107']
     )
   end
 

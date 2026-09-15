@@ -38,6 +38,24 @@ RSpec.describe 'Api::Imports', type: :request do
       expect(response).to have_http_status(:unprocessable_content)
       expect(response.parsed_body['error']).to eq('file must be an uploaded CSV')
     end
+
+    it 'rejects invalid row data' do
+      create(:organization)
+      tempfile = Tempfile.new(['invalid', '.csv'])
+      tempfile.write(
+        "external_id,location_code,position_status,first_name,last_name,work_email\n" \
+        "1001,DT,InvalidStatus,Jane,Doe,jane@example.com\n"
+      )
+      tempfile.rewind
+      file = Rack::Test::UploadedFile.new(tempfile.path, 'text/csv', original_filename: 'invalid.csv')
+
+      post '/api/imports/preview', params: { file: file }
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.parsed_body['error']).to include('invalid position_status')
+    ensure
+      tempfile.close!
+    end
   end
 
   describe 'POST /api/imports/apply' do

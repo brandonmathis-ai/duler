@@ -11,6 +11,7 @@ module Api
                 Encoding::UndefinedConversionError,
                 with: :render_invalid_encoding
     rescue_from InvalidUploadError, with: :render_invalid_upload
+    rescue_from Import::Parsers::PayrollCsvParser::ParseError, with: :render_invalid_upload
     rescue_from MissingOrganizationError, with: :render_missing_organization
     rescue_from JSON::ParserError, with: :render_invalid_resolutions_json
 
