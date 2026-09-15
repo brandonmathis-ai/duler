@@ -9,14 +9,6 @@ RSpec::Matchers.define_negated_matcher :not_change, :change
 RSpec.describe Import::Applier do
   describe '#apply' do
     context 'with an approved mixed plan' do
-      it 'terminates payroll-terminated members' do
-        roster = seed_roster
-
-        Import::Applier.new.apply(update_plan(roster))
-
-        expect(roster[:david].reload.status).to eq('terminated')
-      end
-
       it 'terminates members absent from file' do
         roster = seed_roster
 

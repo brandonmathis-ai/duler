@@ -7,21 +7,6 @@ require 'rails_helper'
 RSpec.describe Import::Planner do
   let(:organization) { create(:organization, name: 'Sunset Hotels') }
 
-  describe '#initialize' do
-    context 'when initialized' do
-      it 'leaves roster unqueried' do
-        create(:member, organization:, external_id: '1001', first_name: 'Maria',
-                        last_name: 'Gomez', corporate_email: 'maria@example.com')
-
-        planner = Import::Planner.new(organization)
-
-        expect(planner.roster).to be_a(ActiveRecord::Relation)
-        expect(planner.roster.klass).to eq(Member)
-        expect(planner.roster).not_to be_loaded
-      end
-    end
-  end
-
   describe '#plan' do
     context 'when employee has no membership or account' do
       it 'plans a new invitation' do

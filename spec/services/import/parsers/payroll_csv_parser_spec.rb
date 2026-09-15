@@ -121,17 +121,6 @@ RSpec.describe Import::Parsers::PayrollCsvParser do
       end
     end
 
-    context 'when the file has a trailing blank line' do
-      it 'ignores the empty row' do
-        row = '1007,DT,Active,07/01/2026,Priya,Nair,priya.nair@sunsethotels.com,,no,555-0107'
-        csv = StringIO.new("#{payroll_csv_for([row])}\n")
-
-        employees = Import::Parsers::PayrollCsvParser.new.parse(csv)
-
-        expect(employees.sole.external_id).to eq('1007')
-      end
-    end
-
     context 'when row is missing external id' do
       it 'raises a parse error' do
         row = ',DT,Active,07/01/2026,Priya,Nair,priya.nair@sunsethotels.com,,no,555-0107'

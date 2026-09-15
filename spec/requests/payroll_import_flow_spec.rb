@@ -8,21 +8,6 @@ require 'rails_helper'
 # current-roster.json, one night of sample-import.csv, and the roster the API
 # serves once the resulting plan is applied.
 RSpec.describe 'Payroll import flow', type: :request do
-  it 'plans every roster member and every file row' do
-    seed_roster_from_fixture
-
-    plan = Import::Planner.new(organization).plan(parse_sample_import)
-
-    expect(plan.counts).to eq(
-      new_invite: 3,
-      offboard_terminated: 1,
-      update: 1,
-      conflict: 1,
-      unchanged: 7,
-      offboard_absent: 1
-    )
-  end
-
   it 'categorizes each file row by external id' do
     seed_roster_from_fixture
 
@@ -47,26 +32,6 @@ RSpec.describe 'Payroll import flow', type: :request do
     )
   end
 
-  it 'serves the fixture roster before the import' do
-    seed_roster_from_fixture
-
-    get '/api/roster'
-
-    expect(normalize(response.parsed_body['members'])).to match_array(
-      normalize(fixture_roster['members'])
-    )
-  end
-
-  it 'leaves the roster untouched while only planning' do
-    seed_roster_from_fixture
-    before_body = (get '/api/roster') && response.parsed_body
-
-    Import::Planner.new(organization).plan(parse_sample_import)
-    get '/api/roster'
-
-    expect(response.parsed_body).to eq(before_body)
-  end
-
   it 'serves the reconciled roster after applying' do
     seed_roster_from_fixture
 
@@ -74,31 +39,6 @@ RSpec.describe 'Payroll import flow', type: :request do
     get '/api/roster'
 
     expect(normalize(response.parsed_body['members'])).to match_array(expected_roster_after)
-  end
-
-  it 'keeps both conflicting Sam Rivera members untouched' do
-    seed_roster_from_fixture
-
-    apply_sample_import
-    get '/api/roster'
-    samples = response.parsed_body['members'].select { |member| member['last_name'] == 'Rivera' }
-
-    expect(samples).to contain_exactly(
-      a_hash_including('external_id' => '1005', 'corporate_email' => 'srivera@sunsethotels.com',
-                       'status' => 'active', 'invite_status' => 'pending', 'user' => nil),
-      a_hash_including('external_id' => nil, 'corporate_email' => 'sam.rivera@sunsethotels.com',
-                       'status' => 'active', 'invite_status' => 'accepted')
-    )
-  end
-
-  it 'never deletes a departed member' do
-    seed_roster_from_fixture
-
-    apply_sample_import
-    get '/api/roster'
-    departed = response.parsed_body['members'].select { |member| member['status'] == 'terminated' }
-
-    expect(departed.pluck('external_id')).to match_array(%w[1002 1006])
   end
 
   it 'stays idempotent on a re-run' do

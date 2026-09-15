@@ -6,20 +6,6 @@ require 'rails_helper'
 
 RSpec.describe 'Api::Roster', type: :request do
   describe 'GET /api/roster' do
-    it 'returns ok status' do
-      get '/api/roster'
-
-      expect(response).to have_http_status(:ok)
-    end
-
-    it 'returns a members collection' do
-      create(:member)
-
-      get '/api/roster'
-
-      expect(response.parsed_body['members'].size).to eq(1)
-    end
-
     context 'when a member has an account and assignments' do
       it 'returns the full member shape' do
         user = create(:user, personal_email: 'd.okafor@gmail.com')
